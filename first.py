@@ -30,7 +30,7 @@ def run_diffusion():
 
     controlnet_conditioning_scale = 0.5  # recommended for good generalization
     controlnet = ControlNetModel.from_pretrained(
-        r"D:\raul\models",
+        r"D:\raul\models\controlnet-canny-sdxl-1.0",
         torch_dtype=torch.float16,
         variant="fp16",
         use_safetensors=True,
@@ -43,7 +43,7 @@ def run_diffusion():
     # ).to("cuda")
 
     vae = AutoencoderKL.from_single_file(
-        r"D:\raul\stable-diffusion-webui\models\VAE\sdxl_vae.safetensors",
+        r"D:\raul\models\sdxl_vae.safetensors",
         torch_dtype=torch.float16,
         variant="fp16",
         use_safetensors=True,
@@ -51,16 +51,20 @@ def run_diffusion():
 
     # base = StableDiffusionXLPipeline.from_single_file(
     base = StableDiffusionXLControlNetPipeline.from_single_file(
-        r"D:\raul\stable-diffusion-webui\models\Stable-diffusion\sd_xl_base_1.0.safetensors",
+        r"D:\raul\models\sd_xl_base_1.0.safetensors",
         vae=vae,
         controlnet=controlnet,
         torch_dtype=torch.float16,
         variant="fp16",
         use_safetensors=True,
     ).to("cuda")
+    # base.enable_vae_tiling()
+    # base.enable_vae_slicing()
 
     prompt = "A majestic lion jumping from a big stone at night"
 
+    base.enable_model_cpu_offload()
+    
     image = base(
         prompt=prompt,
         controlnet_conditioning_scale=controlnet_conditioning_scale,
@@ -71,14 +75,16 @@ def run_diffusion():
     ).images[0]
 
     # base.to("cpu")
-    del base
+    # del base
 
     refiner = StableDiffusionXLImg2ImgPipeline.from_single_file(
-        r"D:\raul\stable-diffusion-webui\models\Stable-diffusion\sd_xl_refiner_1.0.safetensors",
+        r"D:\raul\models\sd_xl_refiner_1.0.safetensors",
         torch_dtype=torch.float16,
         variant="fp16",
         use_safetensors=True,
     ).to("cuda")
+    # refiner.enable_vae_tiling()
+    # refiner.enable_vae_slicing()
 
     image = refiner(
         prompt=prompt,
