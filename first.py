@@ -10,6 +10,7 @@ import numpy as np
 import torch
 import datetime
 import cv2
+import os
 from PIL import Image
 
 
@@ -24,10 +25,8 @@ def run_diffusion():
     image = np.concatenate([image, image, image], axis=2)
     canny_image = Image.fromarray(image)
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"canny_image-{timestamp}.jpg"
-    canny_image.save(filename)
-
+    save_image_with_timestamp(canny_image)
+    
     controlnet_conditioning_scale = 0.5  # recommended for good generalization
     controlnet = ControlNetModel.from_pretrained(
         r"D:\raul\models\controlnet-canny-sdxl-1.0",
@@ -93,15 +92,18 @@ def run_diffusion():
         image=image,
     ).images[0]
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"image-{timestamp}.jpg"
-    image.save(filename)
+    save_image_with_timestamp(image)
 
 
 def save_image_with_timestamp(image):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"image-{timestamp}.jpg"
-    image.save(filename)
+    folder = ".\gen_imgs"
+
+    os.makedirs(folder, exist_ok=True)  # Ensure the directory exists
+    path = os.path.join(folder, filename)  # Create the full path for the file
+
+    image.save(path)
 
 # add if main
 if __name__ == "__main__":
