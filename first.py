@@ -25,7 +25,7 @@ def run_diffusion():
     image = np.concatenate([image, image, image], axis=2)
     canny_image = Image.fromarray(image)
 
-    save_image_with_timestamp(canny_image)
+    save_image_with_timestamp(canny_image, "canny")
     
     controlnet_conditioning_scale = 0.5  # recommended for good generalization
     controlnet = ControlNetModel.from_pretrained(
@@ -95,9 +95,9 @@ def run_diffusion():
     save_image_with_timestamp(image)
 
 
-def save_image_with_timestamp(image):
+def save_image_with_timestamp(image, prefix = ""):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"image-{timestamp}.jpg"
+    filename = f"{prefix}-image-{timestamp}.jpg"
     folder = ".\gen_imgs"
 
     os.makedirs(folder, exist_ok=True)  # Ensure the directory exists
