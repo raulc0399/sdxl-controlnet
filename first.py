@@ -95,7 +95,7 @@ def run_diffusion():
     save_image_with_timestamp(image)
 
 
-def save_image_with_timestamp(image, prefix = ""):
+def save_image_with_timestamp(image, prefix = "generated"):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     filename = f"{prefix}-image-{timestamp}.jpg"
     folder = ".\gen_imgs"
