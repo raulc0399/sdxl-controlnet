@@ -99,7 +99,8 @@ class DiffusionRunner:
         image = self.base(
             **diffusion_args
         ).images[0]
-       
+
+        # https://github.com/huggingface/diffusers/issues/4657
         if self.use_refiner:
             if self.refiner is None:
                 self.load_refiner()
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     CONTROL_IMAGE_URL = "https://hf.co/datasets/hf-internal-testing/diffusers-images/resolve/main/sd_controlnet/hf-logo.png"
    
     prompt = "A majestic lion jumping from a big stone at night"
-    diffusion_runner = DiffusionRunner(True)
+    diffusion_runner = DiffusionRunner()
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
 
     ImageUtils.save_image_with_timestamp(image)
