@@ -80,7 +80,7 @@ class DiffusionRunner:
         if self.base is None:
             self.load_base()
 
-        # self.base.enable_model_cpu_offload()
+        self.base.enable_model_cpu_offload()
         
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
@@ -101,8 +101,11 @@ class DiffusionRunner:
         ).images[0]
        
         if self.use_refiner:
+            if self.refiner is None:
+                self.load_refiner()
+
             image = self.refiner(
-                prompt=self.prompt,
+                prompt=prompt,
                 num_inference_steps=40,
                 denoising_start=0.8,
                 image=image,
@@ -124,7 +127,7 @@ if __name__ == "__main__":
     CONTROL_IMAGE_URL = "https://hf.co/datasets/hf-internal-testing/diffusers-images/resolve/main/sd_controlnet/hf-logo.png"
    
     prompt = "A majestic lion jumping from a big stone at night"
-    diffusion_runner = DiffusionRunner()
+    diffusion_runner = DiffusionRunner(True)
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
 
     ImageUtils.save_image_with_timestamp(image)
