@@ -28,7 +28,8 @@ class ControlNetCannyProcessor:
         return canny_image
 
 class DiffusionRunner:
-    BASE_PATH = r"D:\raul\models\sd_xl_base_1.0_0.9vae.safetensors"
+    BASE_PATH = r"D:\raul\models\juggernautXL_v8Rundiffusion.safetensors"
+    # BASE_PATH = r"D:\raul\models\sd_xl_base_1.0_0.9vae.safetensors"
     # VAE_PATH = r"D:\raul\models\sdxl_vae.safetensors"
     REFINER_PATH = r"D:\raul\models\sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = r"D:\raul\models\controlnet-canny-sdxl-1.0"
@@ -125,9 +126,9 @@ class ImageUtils:
         image.save(path)
 
 if __name__ == "__main__":
-    CONTROL_IMAGE_URL = "https://hf.co/datasets/hf-internal-testing/diffusers-images/resolve/main/sd_controlnet/hf-logo.png"
+    CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4g.jpg"
    
-    prompt = "A majestic lion jumping from a big stone at night"
+    prompt = "RAW photo of house in german suburb, nice warm, day, sunny, white exterior"
     diffusion_runner = DiffusionRunner()
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
 
