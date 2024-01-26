@@ -22,6 +22,7 @@ def safer_memory(x):
     # Fix many MAC/AMD problems
     return np.ascontiguousarray(x.copy()).copy()
 
+# code taken from https://github.com/Mikubill/sd-webui-controlnet
 class ControlNetCannyProcessor:
     @staticmethod
     def HWC3(x):
