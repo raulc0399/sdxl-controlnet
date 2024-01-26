@@ -5,6 +5,7 @@ from diffusers import (
     ControlNetModel,
     AutoencoderKL,
 )
+from diffusers.models.attention_processor import AttnProcessor2_0
 from diffusers.utils import load_image
 import numpy as np
 import torch
@@ -37,7 +38,7 @@ class DiffusionRunner:
     def __init__(self, use_refiner=False):
         self.use_refiner = use_refiner
         self.controlnet = None
-        self.base = None
+        self.pipe = None
         self.refiner = None
 
     def load_controlnet(self):
@@ -46,17 +47,17 @@ class DiffusionRunner:
             torch_dtype=torch.float16,
             variant="fp16",
             use_safetensors=True,
-        ).to("cuda")
+        )#.to("cuda")
 
     def load_base(self):
         assert self.controlnet is not None, "Controlnet must be loaded first"
-        self.base = StableDiffusionXLControlNetPipeline.from_single_file(
+        self.pipe = StableDiffusionXLControlNetPipeline.from_single_file(
             self.BASE_PATH,
             controlnet=self.controlnet,
             torch_dtype=torch.float16,
-            variant="fp16",
+            # variant="fp16",
             use_safetensors=True,
-        ).to("cuda")
+        )#.to("cuda")
 
     # def load_vae(self):
         # self.vae = AutoencoderKL.from_single_file(
@@ -78,10 +79,20 @@ class DiffusionRunner:
         if self.controlnet is None:
             self.load_controlnet()
 
-        if self.base is None:
+        if self.pipe is None:
             self.load_base()
 
-        self.base.enable_model_cpu_offload()
+        self.pipe.to("cuda")
+
+        # self.pipe.enable_model_cpu_offload()
+        
+        # self.pipe.unet.set_attn_processor(AttnProcessor2_0())
+            
+        # self.pipe.unet.to(memory_format=torch.channels_last)
+        # self.pipe.controlnet.to(memory_format=torch.channels_last)
+
+        # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
+        # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
         
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
@@ -97,7 +108,7 @@ class DiffusionRunner:
             diffusion_args["output_type"] = "latent"
             diffusion_args["denoising_end"] = 0.8
 
-        image = self.base(
+        image = self.pipe(
             **diffusion_args
         ).images[0]
 
