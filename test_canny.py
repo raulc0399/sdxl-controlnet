@@ -13,7 +13,7 @@ def resize_image(img, resolution):
     W_target = int(np.round(float(W_raw) * k))
     return cv2.resize(img, (W_target, H_target), interpolation=interpolation)
 
-img = cv2.imread(r"D:\raul\stuff\objs\obj4\4g.jpg") #read image as grayscale
+img = cv2.imread(r"D:\raul\stuff\objs\obj4\4j.jpg") #read image as grayscale
 img_to_show = resize_image(img, 512) 
 
 l = 15
