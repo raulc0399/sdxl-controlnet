@@ -73,7 +73,7 @@ class ControlNetCannyProcessor:
         return remove_pad(result)
 
     @staticmethod
-    def process(image_url):
+    def process(image_url, res=512, thr_a=100, thr_b=200):
         image = load_image(image_url)
 
         image = np.array(image)
@@ -82,7 +82,7 @@ class ControlNetCannyProcessor:
         # image = image[:, :, None]
         # image = np.concatenate([image, image, image], axis=2)
 
-        image = ControlNetCannyProcessor.canny(image, 512, 75, 250)
+        image = ControlNetCannyProcessor.canny(image, res, thr_a, thr_b)
 
         canny_image = Image.fromarray(image)
         return canny_image
@@ -153,7 +153,7 @@ class DiffusionRunner:
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
         
-        canny_image = ControlNetCannyProcessor.process(control_image_url)
+        canny_image = ControlNetCannyProcessor.process(control_image_url, thr_a=0, thr_b=55)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
         diffusion_args = {
@@ -196,7 +196,7 @@ class ImageUtils:
         image.save(path)
 
 if __name__ == "__main__":
-    CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4g.jpg"
+    CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
     prompt = "RAW photo of house in german suburb, nice warm, day, sunny, white exterior"
     diffusion_runner = DiffusionRunner()
