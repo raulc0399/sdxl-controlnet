@@ -68,7 +68,8 @@ class ControlNetCannyProcessor:
         l, h = thr_a, thr_b
         img, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(img, res)        
         
-        result = cv2.Canny(img, l, h)
+        img_blur = cv2.GaussianBlur(img, (3, 3), 0)
+        result = cv2.Canny(img_blur, l, h, 3)
 
         return remove_pad(result)
 
