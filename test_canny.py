@@ -13,18 +13,18 @@ def resize_image(img, resolution):
     W_target = int(np.round(float(W_raw) * k))
     return cv2.resize(img, (W_target, H_target), interpolation=interpolation)
 
-def apply_canny(img, l, u, k):
-    img_blur = cv2.GaussianBlur(img,(3, 3),0)
-    return cv2.Canny(img_blur, l, u, k)
+def apply_canny(img, l, u):
+    # img_blur = cv2.GaussianBlur(img,(3, 3),0)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    return cv2.Canny(gray, l, u)
 
 img = cv2.imread(r"D:\raul\stuff\objs\obj4\4j.jpg") #read image as grayscale
 img_to_show = resize_image(img, 512) 
 
 l = 15
 u = 55
-k = 3
 
-canny = apply_canny(img, l, u, k) 
+canny = apply_canny(img, l, u) 
 
 cv2.namedWindow('image') # make a window with name 'image'
 cv2.resizeWindow('image', 600,600)
@@ -47,6 +47,6 @@ while(1):
     l = cv2.getTrackbarPos('L', 'image')
     u = cv2.getTrackbarPos('U', 'image')
 
-    canny = apply_canny(img, l, u, k)
+    canny = apply_canny(img, l, u)
 
 cv2.destroyAllWindows()
