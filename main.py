@@ -66,10 +66,11 @@ class ControlNetCannyProcessor:
     @staticmethod
     def canny(img, res=512, thr_a=100, thr_b=200, **kwargs):
         l, h = thr_a, thr_b
-        img, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(img, res)        
-        
+
         img_blur = cv2.GaussianBlur(img, (3, 3), 0)
-        result = cv2.Canny(img_blur, l, h, 3)
+        canny_img = cv2.Canny(img_blur, l, h, 3)
+
+        result, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(canny_img, res)
 
         return remove_pad(result)
 
@@ -78,11 +79,7 @@ class ControlNetCannyProcessor:
         image = load_image(image_url)
 
         image = np.array(image)
-        # image = 
-
-        # image = image[:, :, None]
-        # image = np.concatenate([image, image, image], axis=2)
-
+        
         image = ControlNetCannyProcessor.canny(image, res, thr_a, thr_b)
 
         canny_image = Image.fromarray(image)
