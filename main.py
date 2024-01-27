@@ -64,7 +64,7 @@ class ControlNetCannyProcessor:
         return safer_memory(img_padded), remove_pad
 
     @staticmethod
-    def canny(img, res=512, thr_a=100, thr_b=200, **kwargs):
+    def canny(img, res, thr_a, thr_b):
         l, h = thr_a, thr_b
 
         img_blur = cv2.GaussianBlur(img, (3, 3), 0)
@@ -75,7 +75,7 @@ class ControlNetCannyProcessor:
         return remove_pad(result)
 
     @staticmethod
-    def process(image_url, res=512, thr_a=100, thr_b=200):
+    def process(image_url, res=1024, thr_a=100, thr_b=200):
         image = load_image(image_url)
 
         image = np.array(image)
