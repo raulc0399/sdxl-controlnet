@@ -154,7 +154,7 @@ class DiffusionRunner:
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
         
-        canny_image = ControlNetCannyProcessor.process(control_image_url, thr_a=0, thr_b=55)
+        canny_image = ControlNetCannyProcessor.process(control_image_url, thr_a=15, thr_b=55)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
         diffusion_args = {
