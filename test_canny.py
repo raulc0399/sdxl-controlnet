@@ -14,7 +14,7 @@ def resize_image(img, resolution):
     return cv2.resize(img, (W_target, H_target), interpolation=interpolation)
 
 def apply_canny(img, l, u, k):
-    img_blur = cv2.blur(img, (3, 3))
+    img_blur = cv2.GaussianBlur(img,(3, 3),0)
     return cv2.Canny(img_blur, l, u, k)
 
 img = cv2.imread(r"D:\raul\stuff\objs\obj4\4j.jpg") #read image as grayscale
