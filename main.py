@@ -86,7 +86,7 @@ class ControlNetCannyProcessor:
         # return remove_pad(canny_img)
 
     @staticmethod
-    def process(image_url, res=512, thr_a=15, thr_b=155):
+    def process(image_url, res=512, thr_a=5, thr_b=35):
         image = load_image(image_url)
 
         image = np.array(image)
