@@ -4,6 +4,7 @@ from diffusers import (
     StableDiffusionXLImg2ImgPipeline,
     ControlNetModel,
     AutoencoderKL,
+    DPMSolverMultistepScheduler
 )
 from diffusers.models.attention_processor import AttnProcessor2_0
 from diffusers.utils import load_image
@@ -85,7 +86,7 @@ class ControlNetCannyProcessor:
         # return remove_pad(canny_img)
 
     @staticmethod
-    def process(image_url, res=512, thr_a=15, thr_b=55):
+    def process(image_url, res=512, thr_a=75, thr_b=215):
         image = load_image(image_url)
 
         image = np.array(image)
@@ -149,8 +150,10 @@ class DiffusionRunner:
         if self.pipe is None:
             self.load_base()
 
-        self.pipe.to("cuda")
-
+        # self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
+        #                                                             #   algorithm_type="sde-dpmsolver++",
+        #                                                             use_karras_sigmas=True)
+        
         # self.pipe.enable_model_cpu_offload()
         
         # self.pipe.unet.set_attn_processor(AttnProcessor2_0())
@@ -160,6 +163,8 @@ class DiffusionRunner:
 
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
+            
+        self.pipe.to("cuda")
         
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
@@ -206,7 +211,11 @@ class ImageUtils:
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
-    prompt = "architectural rendering of houses of same design in german suburb, nice warm, day, sunny, white exterior"
+    prompt = "architectural rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
+    prompt = "a 3d rendering of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city suburb"
+    prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+    prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+    
     diffusion_runner = DiffusionRunner()
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
 
