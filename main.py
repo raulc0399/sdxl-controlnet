@@ -173,7 +173,8 @@ class DiffusionRunner:
             "prompt": prompt,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": canny_image,
-            "num_inference_steps": 40
+            "num_inference_steps": 40,
+            "guide_scale": 3.0,
         }
 
         if self.use_refiner:
@@ -192,7 +193,7 @@ class DiffusionRunner:
             image = self.refiner(
                 prompt=prompt,
                 num_inference_steps=40,
-                denoising_start=0.8,
+                denoising_start=0.8,                
                 image=image,
             ).images[0]
 
@@ -212,9 +213,9 @@ if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
     prompt = "architectural rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
-    prompt = "a 3d rendering of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city suburb"
-    prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
-    prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+    # prompt = "a 3d rendering of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city suburb"
+    # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+    # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
     
     diffusion_runner = DiffusionRunner()
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
