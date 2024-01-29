@@ -67,15 +67,25 @@ class ControlNetCannyProcessor:
     def canny(img, res, thr_a, thr_b):
         l, h = thr_a, thr_b
 
-        img_blur = cv2.GaussianBlur(img, (3, 3), 0)
-        canny_img = cv2.Canny(img_blur, l, h, 3)
-
-        result, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(canny_img, res)
+        img, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(img, res)        
+        
+        result = cv2.Canny(img, l, h)
 
         return remove_pad(result)
+        
+        # contours, h = cv2.findContours(canny_img, 
+        #                     cv2.RETR_EXTERNAL,
+        #                     cv2.CHAIN_APPROX_NONE)
+        # contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        
+        # cv2.drawContours(canny_img, contours, -1, (255, 255, 255), thickness = 1)
+        
+        # result, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(canny_img, res)
+
+        # return remove_pad(canny_img)
 
     @staticmethod
-    def process(image_url, res=1024, thr_a=100, thr_b=200):
+    def process(image_url, res=512, thr_a=15, thr_b=55):
         image = load_image(image_url)
 
         image = np.array(image)
@@ -151,7 +161,7 @@ class DiffusionRunner:
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
         
-        canny_image = ControlNetCannyProcessor.process(control_image_url, thr_a=15, thr_b=55)
+        canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
         diffusion_args = {
@@ -196,7 +206,7 @@ class ImageUtils:
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
-    prompt = "RAW photo of house in german suburb, nice warm, day, sunny, white exterior"
+    prompt = "architectural rendering of houses of same design in german suburb, nice warm, day, sunny, white exterior"
     diffusion_runner = DiffusionRunner()
     image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
 
