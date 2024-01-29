@@ -15,13 +15,13 @@ def resize_image(img, resolution):
 
 def apply_canny(img, l, u):
     # img_blur = cv2.GaussianBlur(img,(3, 3),0)
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    canny = cv2.Canny(gray, l, u)
+    # gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    canny = cv2.Canny(img, l, u)
 
-    contours = cv2.findContours(canny, 
-                            cv2.RETR_EXTERNAL,
-                            cv2.CHAIN_APPROX_NONE)
-    cv2.drawContours(canny, contours[0], -1, (255,0,0), thickness = 3)
+    # contours = cv2.findContours(canny, 
+    #                         cv2.RETR_EXTERNAL,
+    #                         cv2.CHAIN_APPROX_NONE)
+    # cv2.drawContours(canny, contours[0], -1, (255,0,0), thickness = 3)
 
     return canny
 
@@ -31,7 +31,7 @@ img_to_show = resize_image(img, 512)
 l = 15
 u = 55
 
-canny = apply_canny(img, l, u) 
+canny = apply_canny(img_to_show, l, u) 
 
 cv2.namedWindow('image') # make a window with name 'image'
 cv2.resizeWindow('image', 600,600)
@@ -44,7 +44,7 @@ cv2.setTrackbarPos('U', 'image', u)
 while(1):
     canny_to_show = canny[:, :, None]
     canny_to_show = np.concatenate([canny_to_show, canny_to_show, canny_to_show], axis=2)
-    canny_to_show = resize_image(canny_to_show, 512)
+    # canny_to_show = resize_image(canny_to_show, 512)
     
     numpy_horizontal_concat = np.concatenate((img_to_show, canny_to_show), axis=1) # to display image side by side
     cv2.imshow('image', numpy_horizontal_concat)
@@ -54,6 +54,6 @@ while(1):
     l = cv2.getTrackbarPos('L', 'image')
     u = cv2.getTrackbarPos('U', 'image')
 
-    canny = apply_canny(img, l, u)
+    canny = apply_canny(img_to_show, l, u)
 
 cv2.destroyAllWindows()
