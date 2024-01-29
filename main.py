@@ -86,7 +86,7 @@ class ControlNetCannyProcessor:
         # return remove_pad(canny_img)
 
     @staticmethod
-    def process(image_url, res=512, thr_a=75, thr_b=215):
+    def process(image_url, res=512, thr_a=15, thr_b=155):
         image = load_image(image_url)
 
         image = np.array(image)
@@ -143,6 +143,21 @@ class DiffusionRunner:
             use_safetensors=True,
         ).to("cuda")
 
+    @staticmethod
+    # used to disable guidance_scale after a certain number of steps
+    def callback_dynamic_cfg(pipe, step_index, timestep, callback_kwargs):
+        # adjust the batch_size of prompt_embeds according to guidance_scale
+        if step_index == int(pipe.num_timesteps * 0.4):
+            prompt_embeds = callback_kwargs["prompt_embeds"]
+            # prompt_embeds = torch.chunk(prompt_embeds, 2, dim=0)[-1] # prompt_embeds.chunk(2)[-1]
+
+            # update guidance_scale and prompt_embeds
+            pipe._guidance_scale = 1.0
+            callback_kwargs["prompt_embeds"] = prompt_embeds
+        
+        return callback_kwargs
+
+
     def run(self, prompt, control_image_url, controlnet_conditioning_scale = 0.5):
         if self.controlnet is None:
             self.load_controlnet()
@@ -173,7 +188,7 @@ class DiffusionRunner:
             "prompt": prompt,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": canny_image,
-            "num_inference_steps": 40,
+            "num_inference_steps": 25,
             "guide_scale": 3.0,
         }
 
@@ -182,7 +197,9 @@ class DiffusionRunner:
             diffusion_args["denoising_end"] = 0.8
 
         image = self.pipe(
-            **diffusion_args
+            **diffusion_args,
+            # callback_on_step_end=self.callback_dynamic_cfg,
+            # callback_on_step_end_tensor_inputs=['prompt_embeds']
         ).images[0]
 
         # https://github.com/huggingface/diffusers/issues/4657
@@ -212,7 +229,7 @@ class ImageUtils:
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
-    prompt = "architectural rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
+    prompt = "raytrace rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
     # prompt = "a 3d rendering of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city suburb"
     # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
     # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
