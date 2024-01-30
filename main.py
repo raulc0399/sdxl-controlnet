@@ -86,7 +86,7 @@ class ControlNetCannyProcessor:
         # return remove_pad(canny_img)
 
     @staticmethod
-    def process(image_url, res=512, thr_a=5, thr_b=35):
+    def process(image_url, res=512, thr_a=150, thr_b=200):
         image = load_image(image_url)
 
         image = np.array(image)
@@ -158,7 +158,7 @@ class DiffusionRunner:
         return callback_kwargs
 
 
-    def run(self, prompt, control_image_url, controlnet_conditioning_scale = 0.5):
+    def run(self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url):
         if self.controlnet is None:
             self.load_controlnet()
 
@@ -184,12 +184,16 @@ class DiffusionRunner:
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
+        
         diffusion_args = {
             "prompt": prompt,
-            "controlnet_conditioning_scale": controlnet_conditioning_scale,
+            # "prompt_2": prompt_2,
+            "negative_prompt": negative_prompt,
+            # "negative_prompt_2": negative_prompt_2,
+            "controlnet_conditioning_scale": 0.5,
             "image": canny_image,
-            "num_inference_steps": 25,
-            "guide_scale": 3.0,
+            "num_inference_steps": 40,
+            "guide_scale": 4.0,
         }
 
         if self.use_refiner:
@@ -229,12 +233,17 @@ class ImageUtils:
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
-    prompt = "raytrace rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
-    # prompt = "a 3d rendering of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city suburb"
+    prompt = "A realistic image of a modern house in the suburbs of a modern city, showcasing a unique blend of classic architecture with contemporary elements. The house is not on the main street, surrounded by a variety of vegetation. It should display features typical of traditional German houses, such as steep gabled roofs or timber framing, integrated with modern design aspects like geometric (quadratic) shapes and large glass panels. Vary the angle of the image for a different perspective, and alter the sun's position to change the lighting, creating distinctive shadows and highlights. The surrounding environment should have diverse trees and shrubs, reinforcing the house's connection with nature. The scene is captured on a sunny day to accentuate the fusion of architectural styles"
+    # prompt = "a 3d rendering of a row of houses with realistic staircase between the floors, sunny, white exterior, warm day, modern city suburb"
     # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
     # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+
+    prompt_2 = ""
     
+    negative_prompt = "semi-realistic, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate"
+    negative_prompt_2 = ""
+
     diffusion_runner = DiffusionRunner()
-    image = diffusion_runner.run(prompt, CONTROL_IMAGE_URL)
+    image = diffusion_runner.run(prompt, prompt_2, negative_prompt, negative_prompt_2, CONTROL_IMAGE_URL)
 
     ImageUtils.save_image_with_timestamp(image)
