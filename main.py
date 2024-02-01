@@ -4,9 +4,10 @@ from diffusers import (
     StableDiffusionXLImg2ImgPipeline,
     ControlNetModel,
     AutoencoderKL,
-    DPMSolverMultistepScheduler
+    DPMSolverMultistepScheduler,
+    StableDiffusionUpscalePipeline
 )
-from diffusers.models.attention_processor import AttnProcessor2_0
+# from diffusers.models.attention_processor import AttnProcessor2_0
 from diffusers.utils import load_image
 import numpy as np
 import torch
@@ -14,6 +15,7 @@ import datetime
 import cv2
 import os
 from PIL import Image
+from compel import Compel, ReturnedEmbeddingsType
 
 def pad64(x):
     return int(np.ceil(float(x) / 64.0) * 64 - x)
@@ -108,6 +110,7 @@ class DiffusionRunner:
         self.controlnet = None
         self.pipe = None
         self.refiner = None
+        self.compel_proc = None
 
     def load_controlnet(self):
         self.controlnet = ControlNetModel.from_pretrained(
@@ -125,6 +128,13 @@ class DiffusionRunner:
             torch_dtype=torch.float16,
             # variant="fp16",
             use_safetensors=True,
+        )
+
+        self.compel = Compel(
+            tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2] ,
+            text_encoder=[self.pipe.text_encoder, self.pipe.text_encoder_2],
+            returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+            requires_pooled=[False, True]
         )
 
     # def load_vae(self):
@@ -184,11 +194,22 @@ class DiffusionRunner:
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
+        conditioning, pooled = self.compel(prompt)
+
+        # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
+        generator = None
+        seed = None # set to 0 for random, or to a specific seed value
+        if seed is not None:
+            torch.manual_seed(seed)
+            generator = [torch.Generator(device="cuda").manual_seed(seed)]
         
         diffusion_args = {
-            "prompt": prompt,
+            "prompt_embeds": conditioning,
+            "pooled_prompt_embeds": pooled,
+            "generator": generator,
+            # "prompt": prompt,
             # "prompt_2": prompt_2,
-            "negative_prompt": negative_prompt,
+            # "negative_prompt": negative_prompt,
             # "negative_prompt_2": negative_prompt_2,
             "controlnet_conditioning_scale": 0.5,
             "image": canny_image,
@@ -233,10 +254,15 @@ class ImageUtils:
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
    
-    prompt = "A realistic image of a modern house in the suburbs of a modern city, showcasing a unique blend of classic architecture with contemporary elements. The house is not on the main street, surrounded by a variety of vegetation. It should display features typical of traditional German houses, such as steep gabled roofs or timber framing, integrated with modern design aspects like geometric (quadratic) shapes and large glass panels. Vary the angle of the image for a different perspective, and alter the sun's position to change the lighting, creating distinctive shadows and highlights. The surrounding environment should have diverse trees and shrubs, reinforcing the house's connection with nature. The scene is captured on a sunny day to accentuate the fusion of architectural styles"
+    # prompt = "A realistic image of a modern house in the suburbs of a modern city, showcasing a unique blend of classic architecture with contemporary elements. The house is not on the main street, surrounded by a variety of vegetation. It should display features typical of traditional German houses, such as steep gabled roofs or timber framing, integrated with modern design aspects like geometric (quadratic) shapes and large glass panels. Vary the angle of the image for a different perspective, and alter the sun's position to change the lighting, creating distinctive shadows and highlights. The surrounding environment should have diverse trees and shrubs, reinforcing the house's connection with nature. The scene is captured on a sunny day to accentuate the fusion of architectural styles"
     # prompt = "a 3d rendering of a row of houses with realistic staircase between the floors, sunny, white exterior, warm day, modern city suburb"
     # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
     # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+
+    prompt = """A 3d rendering of a modern house in the suburbs of a modern city. Stairs between the floors.
+The house is not on the main street, nice clean vegetation.
+sun's position in the morning, on a warm sunny day. 
+"""
 
     prompt_2 = ""
     
