@@ -5,8 +5,9 @@ from diffusers import (
     ControlNetModel,
     AutoencoderKL,
     DPMSolverMultistepScheduler,
-    StableDiffusionUpscalePipeline
+    StableDiffusionUpscalePipeline,
 )
+
 # from diffusers.models.attention_processor import AttnProcessor2_0
 from diffusers.utils import load_image
 import numpy as np
@@ -17,6 +18,7 @@ import os
 from PIL import Image
 from compel import Compel, ReturnedEmbeddingsType
 
+
 def pad64(x):
     return int(np.ceil(float(x) / 64.0) * 64 - x)
 
@@ -24,6 +26,7 @@ def pad64(x):
 def safer_memory(x):
     # Fix many MAC/AMD problems
     return np.ascontiguousarray(x.copy()).copy()
+
 
 # code taken from https://github.com/Mikubill/sd-webui-controlnet
 class ControlNetCannyProcessor:
@@ -45,7 +48,7 @@ class ControlNetCannyProcessor:
             y = color * alpha + 255.0 * (1.0 - alpha)
             y = y.clip(0, 255).astype(np.uint8)
             return y
-        
+
     @staticmethod
     def resize_image_with_pad(input_image, resolution, skip_hwc3=False):
         if skip_hwc3:
@@ -59,7 +62,7 @@ class ControlNetCannyProcessor:
         W_target = int(np.round(float(W_raw) * k))
         img = cv2.resize(img, (W_target, H_target), interpolation=interpolation)
         H_pad, W_pad = pad64(H_target), pad64(W_target)
-        img_padded = np.pad(img, [[0, H_pad], [0, W_pad], [0, 0]], mode='edge')
+        img_padded = np.pad(img, [[0, H_pad], [0, W_pad], [0, 0]], mode="edge")
 
         def remove_pad(x):
             return safer_memory(x[:H_target, :W_target])
@@ -70,19 +73,19 @@ class ControlNetCannyProcessor:
     def canny(img, res, thr_a, thr_b):
         l, h = thr_a, thr_b
 
-        img, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(img, res)        
-        
+        img, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(img, res)
+
         result = cv2.Canny(img, l, h)
 
         return remove_pad(result)
-        
-        # contours, h = cv2.findContours(canny_img, 
+
+        # contours, h = cv2.findContours(canny_img,
         #                     cv2.RETR_EXTERNAL,
         #                     cv2.CHAIN_APPROX_NONE)
         # contours = sorted(contours, key=cv2.contourArea, reverse=True)
-        
+
         # cv2.drawContours(canny_img, contours, -1, (255, 255, 255), thickness = 1)
-        
+
         # result, remove_pad = ControlNetCannyProcessor.resize_image_with_pad(canny_img, res)
 
         # return remove_pad(canny_img)
@@ -92,11 +95,12 @@ class ControlNetCannyProcessor:
         image = load_image(image_url)
 
         image = np.array(image)
-        
+
         image = ControlNetCannyProcessor.canny(image, res, thr_a, thr_b)
 
         canny_image = Image.fromarray(image)
         return canny_image
+
 
 class DiffusionRunner:
     BASE_PATH = r"D:\raul\models\juggernautXL_v8Rundiffusion.safetensors"
@@ -104,7 +108,7 @@ class DiffusionRunner:
     # VAE_PATH = r"D:\raul\models\sdxl_vae.safetensors"
     REFINER_PATH = r"D:\raul\models\sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = r"D:\raul\models\controlnet-canny-sdxl-1.0"
-    
+
     def __init__(self, use_refiner=False):
         self.use_refiner = use_refiner
         self.controlnet = None
@@ -118,7 +122,7 @@ class DiffusionRunner:
             torch_dtype=torch.float16,
             variant="fp16",
             use_safetensors=True,
-        )#.to("cuda")
+        )  # .to("cuda")
 
     def load_base(self):
         assert self.controlnet is not None, "Controlnet must be loaded first"
@@ -131,19 +135,19 @@ class DiffusionRunner:
         )
 
         self.compel = Compel(
-            tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2] ,
+            tokenizer=[self.pipe.tokenizer, self.pipe.tokenizer_2],
             text_encoder=[self.pipe.text_encoder, self.pipe.text_encoder_2],
             returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
-            requires_pooled=[False, True]
+            requires_pooled=[False, True],
         )
 
     # def load_vae(self):
-        # self.vae = AutoencoderKL.from_single_file(
-        #     self.VAE_PATH,
-        #     torch_dtype=torch.float16,
-        #     variant="fp16",
-        #     use_safetensors=True,
-        # )
+    # self.vae = AutoencoderKL.from_single_file(
+    #     self.VAE_PATH,
+    #     torch_dtype=torch.float16,
+    #     variant="fp16",
+    #     use_safetensors=True,
+    # )
 
     def load_refiner(self):
         self.refiner = StableDiffusionXLImg2ImgPipeline.from_single_file(
@@ -164,11 +168,12 @@ class DiffusionRunner:
             # update guidance_scale and prompt_embeds
             pipe._guidance_scale = 1.0
             callback_kwargs["prompt_embeds"] = prompt_embeds
-        
+
         return callback_kwargs
 
-
-    def run(self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url):
+    def run(
+        self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url
+    ):
         if self.controlnet is None:
             self.load_controlnet()
 
@@ -178,19 +183,19 @@ class DiffusionRunner:
         # self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
-        
-        # self.pipe.enable_model_cpu_offload()
-        
+
+        self.pipe.enable_model_cpu_offload()
+
         # self.pipe.unet.set_attn_processor(AttnProcessor2_0())
-            
+
         # self.pipe.unet.to(memory_format=torch.channels_last)
         # self.pipe.controlnet.to(memory_format=torch.channels_last)
 
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
-            
+
         self.pipe.to("cuda")
-        
+
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
 
@@ -198,11 +203,11 @@ class DiffusionRunner:
 
         # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
         generator = None
-        seed = None # set to 0 for random, or to a specific seed value
+        seed = None  # set to 0 for random, or to a specific seed value
         if seed is not None:
             torch.manual_seed(seed)
             generator = [torch.Generator(device="cuda").manual_seed(seed)]
-        
+
         diffusion_args = {
             "prompt_embeds": conditioning,
             "pooled_prompt_embeds": pooled,
@@ -235,15 +240,22 @@ class DiffusionRunner:
             image = self.refiner(
                 prompt=prompt,
                 num_inference_steps=40,
-                denoising_start=0.8,                
+                denoising_start=0.8,
                 image=image,
             ).images[0]
 
-        return image
+        # //////
+        model_id = "stabilityai/stable-diffusion-x4-upscaler"
+        upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(model_id, torch_dtype=torch.float16).to("cuda")
+        upscaled_image = upscalePipeline(prompt=prompt, image=image).images[0]
+        # //////
+
+        return image, upscaled_image
+
 
 class ImageUtils:
     @staticmethod
-    def save_image_with_timestamp(image, suffix = "generated"):
+    def save_image_with_timestamp(image, suffix="generated"):
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         filename = f"{timestamp}-{suffix}.jpg"
         folder = ".\gen_imgs"
@@ -251,9 +263,10 @@ class ImageUtils:
         path = os.path.join(folder, filename)  # Create the full path for the file
         image.save(path)
 
+
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
-   
+
     # prompt = "A realistic image of a modern house in the suburbs of a modern city, showcasing a unique blend of classic architecture with contemporary elements. The house is not on the main street, surrounded by a variety of vegetation. It should display features typical of traditional German houses, such as steep gabled roofs or timber framing, integrated with modern design aspects like geometric (quadratic) shapes and large glass panels. Vary the angle of the image for a different perspective, and alter the sun's position to change the lighting, creating distinctive shadows and highlights. The surrounding environment should have diverse trees and shrubs, reinforcing the house's connection with nature. The scene is captured on a sunny day to accentuate the fusion of architectural styles"
     # prompt = "a 3d rendering of a row of houses with realistic staircase between the floors, sunny, white exterior, warm day, modern city suburb"
     # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
@@ -265,11 +278,14 @@ sun's position in the morning, on a warm sunny day.
 """
 
     prompt_2 = ""
-    
+
     negative_prompt = "semi-realistic, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate"
     negative_prompt_2 = ""
 
     diffusion_runner = DiffusionRunner()
-    image = diffusion_runner.run(prompt, prompt_2, negative_prompt, negative_prompt_2, CONTROL_IMAGE_URL)
+    image, upscaled_image = diffusion_runner.run(
+        prompt, prompt_2, negative_prompt, negative_prompt_2, CONTROL_IMAGE_URL
+    )
 
     ImageUtils.save_image_with_timestamp(image)
+    ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
