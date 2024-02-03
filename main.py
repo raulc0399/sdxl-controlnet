@@ -198,7 +198,7 @@ class DiffusionRunner:
         if self.upscalePipeline is None:
             self.load_upscaler()
 
-        self.upscaler_pipe_to_cuda
+        self.upscaler_pipe_to_cuda()
 
         upscaled_image = self.upscalePipeline(prompt=prompt, image=image).images[0]
         return upscaled_image
