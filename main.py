@@ -157,13 +157,13 @@ class DiffusionRunner:
             torch_dtype=torch.float16,
             variant="fp16",
             use_safetensors=True,
-        ).to("cuda")
+        )
 
     def load_upscaler(self):
         self.upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(
             self.UPSCALER_MODEL_ID,
             torch_dtype=torch.float16
-        ).to("cuda")
+        )
 
     def refiner_pipe_to_cuda(self):
         self.pipe.to("cpu")
