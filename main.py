@@ -124,7 +124,7 @@ class DiffusionRunner:
             torch_dtype=torch.float16,
             variant="fp16",
             use_safetensors=True,
-        )  # .to("cuda")
+        )
 
     def load_base(self):
         assert self.controlnet is not None, "Controlnet must be loaded first"
@@ -132,7 +132,6 @@ class DiffusionRunner:
             self.BASE_PATH,
             controlnet=self.controlnet,
             torch_dtype=torch.float16,
-            # variant="fp16",
             use_safetensors=True,
         )
 
@@ -142,6 +141,9 @@ class DiffusionRunner:
             returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
             requires_pooled=[False, True],
         )
+
+        # self.pipe.to("cuda")
+        self.pipe.enable_model_cpu_offload()
 
     # def load_vae(self):
     # self.vae = AutoencoderKL.from_single_file(
@@ -159,25 +161,21 @@ class DiffusionRunner:
             use_safetensors=True,
         )
 
+        # self.refiner.to("cuda")
+        self.refiner.enable_model_cpu_offload()
+
     def load_upscaler(self):
         self.upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(
             self.UPSCALER_MODEL_ID,
             torch_dtype=torch.float16
         )
 
-    def refiner_pipe_to_cuda(self):
-        self.pipe.to("cpu")
-
-        if self.upscalePipeline is not None:
-            self.upscalePipeline.to("cpu")
-
-        self.refiner.to("cuda")
-
+        # self.upscalePipeline.to("cuda")
+        self.upscalePipeline.enable_model_cpu_offload()
+    
     def run_refiner(self, image):
         if self.refiner is None:
             self.load_refiner()
-
-        self.refiner_pipe_to_cuda()
 
         return self.refiner(
             prompt=prompt,
@@ -186,31 +184,13 @@ class DiffusionRunner:
             image=image,
         ).images[0]
 
-    def upscaler_pipe_to_cuda(self):
-        self.pipe.to("cpu")
-
-        if self.refiner is not None:
-            self.refiner.to("cpu")
-
-        self.upscalePipeline.to("cuda")
-
     def run_upscaler(self, prompt, image):
         if self.upscalePipeline is None:
             self.load_upscaler()
 
-        self.upscaler_pipe_to_cuda()
-
         upscaled_image = self.upscalePipeline(prompt=prompt, image=image).images[0]
         return upscaled_image
-    
-    def base_pipe_to_cuda(self):
-        if self.refiner is not None:
-            self.refiner.to("cpu")
-
-        if self.upscalePipeline is not None:
-            self.upscalePipeline.to("cpu")
-
-        self.pipe.to("cuda")
+   
 
     @staticmethod
     # used to disable guidance_scale after a certain number of steps
@@ -244,8 +224,6 @@ class DiffusionRunner:
 
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
-
-        self.base_pipe_to_cuda()
 
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
