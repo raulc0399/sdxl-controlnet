@@ -219,9 +219,7 @@ class DiffusionRunner:
         # self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
-
-        # self.pipe.enable_model_cpu_offload()
-
+        
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
 
