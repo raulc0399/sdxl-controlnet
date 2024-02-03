@@ -108,6 +108,7 @@ class DiffusionRunner:
     # VAE_PATH = r"D:\raul\models\sdxl_vae.safetensors"
     REFINER_PATH = r"D:\raul\models\sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = r"D:\raul\models\controlnet-canny-sdxl-1.0"
+    UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
     def __init__(self, use_refiner=False):
         self.use_refiner = use_refiner
@@ -115,6 +116,7 @@ class DiffusionRunner:
         self.pipe = None
         self.refiner = None
         self.compel_proc = None
+        self.upscalePipeline = None
 
     def load_controlnet(self):
         self.controlnet = ControlNetModel.from_pretrained(
@@ -140,6 +142,12 @@ class DiffusionRunner:
             returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
             requires_pooled=[False, True],
         )
+
+    def load_upscaler(self):
+        self.upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(
+            self.UPSCALER_MODEL_ID,
+            torch_dtype=torch.float16
+        ).to("cuda")
 
     # def load_vae(self):
     # self.vae = AutoencoderKL.from_single_file(
@@ -171,8 +179,17 @@ class DiffusionRunner:
 
         return callback_kwargs
 
+    def run_upscaler(self, prompt, image):
+        self.pipe.to("cpu")
+
+        if self.upscalePipeline is None:
+            self.load_upscaler()
+
+        upscaled_image = self.upscalePipeline(prompt=prompt, image=image).images[0]
+        return upscaled_image
+    
     def run(
-        self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url
+        self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url, upscale=False
     ):
         if self.controlnet is None:
             self.load_controlnet()
@@ -184,7 +201,7 @@ class DiffusionRunner:
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
 
-        self.pipe.enable_model_cpu_offload()
+        # self.pipe.enable_model_cpu_offload()
 
         # self.pipe.unet.set_attn_processor(AttnProcessor2_0())
 
@@ -244,11 +261,9 @@ class DiffusionRunner:
                 image=image,
             ).images[0]
 
-        # //////
-        model_id = "stabilityai/stable-diffusion-x4-upscaler"
-        upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(model_id, torch_dtype=torch.float16).to("cuda")
-        upscaled_image = upscalePipeline(prompt=prompt, image=image).images[0]
-        # //////
+        upscaled_image = None
+        if upscale:
+            upscaled_image = self.run_upscaler(prompt, image)
 
         return image, upscaled_image
 
@@ -262,7 +277,6 @@ class ImageUtils:
         os.makedirs(folder, exist_ok=True)  # Ensure the directory exists
         path = os.path.join(folder, filename)  # Create the full path for the file
         image.save(path)
-
 
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
@@ -288,4 +302,6 @@ sun's position in the morning, on a warm sunny day.
     )
 
     ImageUtils.save_image_with_timestamp(image)
-    ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
+    
+    if upscaled_image is not None:
+        ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
