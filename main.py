@@ -298,10 +298,15 @@ sun's position in the morning, on a warm sunny day.
 
     diffusion_runner = DiffusionRunner()
     image, upscaled_image = diffusion_runner.run(
-        prompt, prompt_2, negative_prompt, negative_prompt_2, CONTROL_IMAGE_URL
+        prompt,
+        prompt_2,
+        negative_prompt,
+        negative_prompt_2,
+        CONTROL_IMAGE_URL,
+        upscale=True
     )
 
     ImageUtils.save_image_with_timestamp(image)
-    
+
     if upscaled_image is not None:
         ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
