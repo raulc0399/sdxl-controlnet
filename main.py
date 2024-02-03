@@ -143,12 +143,6 @@ class DiffusionRunner:
             requires_pooled=[False, True],
         )
 
-    def load_upscaler(self):
-        self.upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(
-            self.UPSCALER_MODEL_ID,
-            torch_dtype=torch.float16
-        ).to("cuda")
-
     # def load_vae(self):
     # self.vae = AutoencoderKL.from_single_file(
     #     self.VAE_PATH,
@@ -165,6 +159,59 @@ class DiffusionRunner:
             use_safetensors=True,
         ).to("cuda")
 
+    def load_upscaler(self):
+        self.upscalePipeline = StableDiffusionUpscalePipeline.from_pretrained(
+            self.UPSCALER_MODEL_ID,
+            torch_dtype=torch.float16
+        ).to("cuda")
+
+    def refiner_pipe_to_cuda(self):
+        self.pipe.to("cpu")
+
+        if self.upscalePipeline is not None:
+            self.upscalePipeline.to("cpu")
+
+        self.refiner.to("cuda")
+
+    def run_refiner(self, image):
+        if self.refiner is None:
+            self.load_refiner()
+
+        self.refiner_pipe_to_cuda()
+
+        return self.refiner(
+            prompt=prompt,
+            num_inference_steps=40,
+            denoising_start=0.8,
+            image=image,
+        ).images[0]
+
+    def upscaler_pipe_to_cuda(self):
+        self.pipe.to("cpu")
+
+        if self.refiner is not None:
+            self.refiner.to("cpu")
+
+        self.upscalePipeline.to("cuda")
+
+    def run_upscaler(self, prompt, image):
+        if self.upscalePipeline is None:
+            self.load_upscaler()
+
+        self.upscaler_pipe_to_cuda
+
+        upscaled_image = self.upscalePipeline(prompt=prompt, image=image).images[0]
+        return upscaled_image
+    
+    def base_pipe_to_cuda(self):
+        if self.refiner is not None:
+            self.refiner.to("cpu")
+
+        if self.upscalePipeline is not None:
+            self.upscalePipeline.to("cpu")
+
+        self.pipe.to("cuda")
+
     @staticmethod
     # used to disable guidance_scale after a certain number of steps
     def callback_dynamic_cfg(pipe, step_index, timestep, callback_kwargs):
@@ -179,15 +226,6 @@ class DiffusionRunner:
 
         return callback_kwargs
 
-    def run_upscaler(self, prompt, image):
-        self.pipe.to("cpu")
-
-        if self.upscalePipeline is None:
-            self.load_upscaler()
-
-        upscaled_image = self.upscalePipeline(prompt=prompt, image=image).images[0]
-        return upscaled_image
-    
     def run(
         self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url, upscale=False
     ):
@@ -197,21 +235,17 @@ class DiffusionRunner:
         if self.pipe is None:
             self.load_base()
 
+        # change scheduler
         # self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
 
         # self.pipe.enable_model_cpu_offload()
 
-        # self.pipe.unet.set_attn_processor(AttnProcessor2_0())
-
-        # self.pipe.unet.to(memory_format=torch.channels_last)
-        # self.pipe.controlnet.to(memory_format=torch.channels_last)
-
         # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
         # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
 
-        self.pipe.to("cuda")
+        self.base_pipe_to_cuda()
 
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
@@ -251,15 +285,7 @@ class DiffusionRunner:
 
         # https://github.com/huggingface/diffusers/issues/4657
         if self.use_refiner:
-            if self.refiner is None:
-                self.load_refiner()
-
-            image = self.refiner(
-                prompt=prompt,
-                num_inference_steps=40,
-                denoising_start=0.8,
-                image=image,
-            ).images[0]
+            image = self.run_refiner(image)
 
         upscaled_image = None
         if upscale:
