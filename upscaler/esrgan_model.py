@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-import esrgan_model_arch as arch
-import image_grid
+import upscaler.esrgan_model_arch as arch
+import upscaler.image_grid as image_grid
 
 def mod2normal(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
@@ -135,7 +135,7 @@ class UpscalerESRGAN:
 
         except Exception as e:
             print(f"Unable to load ESRGAN model {self.model_name}: {e}", file=sys.stderr)
-            return img
+            return None
         
         self.model.to(self.device_esrgan)
         img = self.esrgan_upscale(img, tile, overlap)
@@ -145,7 +145,7 @@ class UpscalerESRGAN:
     def load_model(self):
         filename = os.path.join(self.model_dir, f"{self.model_name}.pth")
 
-        state_dict = torch.load(filename, map_location='cpu' if self.device_esrgan.type == 'mps' else None)
+        state_dict = torch.load(filename, map_location=self.device_esrgan)
 
         if "params_ema" in state_dict:
             state_dict = state_dict["params_ema"]
@@ -176,7 +176,7 @@ class UpscalerESRGAN:
         img = img[:, :, ::-1]
         img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
         img = torch.from_numpy(img).float()
-        img = img.unsqueeze(0) # .to(devices.device_esrgan)
+        img = img.unsqueeze(0).to(self.device_esrgan)
         with torch.no_grad():
             output = self.model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
