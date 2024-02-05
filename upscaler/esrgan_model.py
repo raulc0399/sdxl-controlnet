@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-import modules.esrgan_model_arch as arch
-from modules import modelloader, images, devices
+import esrgan_model_arch as arch
+import image_grid
 from modules.shared import opts
 from modules.upscaler import Upscaler, UpscalerData
 
@@ -122,6 +122,7 @@ def infer_params(state_dict):
 
 class UpscalerESRGAN(Upscaler):
     def __init__(self, dirname):
+        self.device_esrgan = "cuda"
         self.name = "ESRGAN"
         self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
         self.model_name = "ESRGAN_4x"
@@ -148,7 +149,7 @@ class UpscalerESRGAN(Upscaler):
         except Exception as e:
             print(f"Unable to load ESRGAN model {selected_model}: {e}", file=sys.stderr)
             return img
-        model.to(devices.device_esrgan)
+        model.to(self.device_esrgan)
         img = esrgan_upscale(model, img)
         return img
 
@@ -163,7 +164,7 @@ class UpscalerESRGAN(Upscaler):
         else:
             filename = path
 
-        state_dict = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
+        state_dict = torch.load(filename, map_location='cpu' if self.device_esrgan.type == 'mps' else None)
 
         if "params_ema" in state_dict:
             state_dict = state_dict["params_ema"]
@@ -191,41 +192,40 @@ class UpscalerESRGAN(Upscaler):
 
         return model
 
+    def upscale_without_tiling(self, model, img):
+        img = np.array(img)
+        img = img[:, :, ::-1]
+        img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
+        img = torch.from_numpy(img).float()
+        img = img.unsqueeze(0) # .to(devices.device_esrgan)
+        with torch.no_grad():
+            output = model(img)
+        output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
+        output = 255. * np.moveaxis(output, 0, 2)
+        output = output.astype(np.uint8)
+        output = output[:, :, ::-1]
+        return Image.fromarray(output, 'RGB')
 
-def upscale_without_tiling(model, img):
-    img = np.array(img)
-    img = img[:, :, ::-1]
-    img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
-    img = torch.from_numpy(img).float()
-    img = img.unsqueeze(0).to(devices.device_esrgan)
-    with torch.no_grad():
-        output = model(img)
-    output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
-    output = 255. * np.moveaxis(output, 0, 2)
-    output = output.astype(np.uint8)
-    output = output[:, :, ::-1]
-    return Image.fromarray(output, 'RGB')
 
+    def esrgan_upscale(self, model, img):
+        if opts.ESRGAN_tile == 0:
+            return self.upscale_without_tiling(model, img)
 
-def esrgan_upscale(model, img):
-    if opts.ESRGAN_tile == 0:
-        return upscale_without_tiling(model, img)
+        grid = images.split_grid(img, opts.ESRGAN_tile, opts.ESRGAN_tile, opts.ESRGAN_tile_overlap)
+        newtiles = []
+        scale_factor = 1
 
-    grid = images.split_grid(img, opts.ESRGAN_tile, opts.ESRGAN_tile, opts.ESRGAN_tile_overlap)
-    newtiles = []
-    scale_factor = 1
+        for y, h, row in grid.tiles:
+            newrow = []
+            for tiledata in row:
+                x, w, tile = tiledata
 
-    for y, h, row in grid.tiles:
-        newrow = []
-        for tiledata in row:
-            x, w, tile = tiledata
+                output = self.upscale_without_tiling(model, tile)
+                scale_factor = output.width // tile.width
 
-            output = upscale_without_tiling(model, tile)
-            scale_factor = output.width // tile.width
+                newrow.append([x * scale_factor, w * scale_factor, output])
+            newtiles.append([y * scale_factor, h * scale_factor, newrow])
 
-            newrow.append([x * scale_factor, w * scale_factor, output])
-        newtiles.append([y * scale_factor, h * scale_factor, newrow])
-
-    newgrid = images.Grid(newtiles, grid.tile_w * scale_factor, grid.tile_h * scale_factor, grid.image_w * scale_factor, grid.image_h * scale_factor, grid.overlap * scale_factor)
-    output = images.combine_grid(newgrid)
-    return output
+        newgrid = images.Grid(newtiles, grid.tile_w * scale_factor, grid.tile_h * scale_factor, grid.image_w * scale_factor, grid.image_h * scale_factor, grid.overlap * scale_factor)
+        output = images.combine_grid(newgrid)
+        return output
