@@ -1,6 +1,7 @@
 # file adapted from a1111
 
 import sys
+import os
 
 import numpy as np
 import torch
@@ -8,9 +9,6 @@ from PIL import Image
 
 import esrgan_model_arch as arch
 import image_grid
-from modules.shared import opts
-from modules.upscaler import Upscaler, UpscalerData
-
 
 def mod2normal(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
@@ -120,49 +118,32 @@ def infer_params(state_dict):
     return in_nc, out_nc, nf, nb, plus, scale
 
 
-class UpscalerESRGAN(Upscaler):
-    def __init__(self, dirname):
+class UpscalerESRGAN:
+    def __init__(self, model_name, model_dir, scale = 4):
         self.device_esrgan = "cuda"
-        self.name = "ESRGAN"
-        self.model_url = "https://github.com/cszn/KAIR/releases/download/v1.0/ESRGAN.pth"
-        self.model_name = "ESRGAN_4x"
-        self.scalers = []
-        self.user_path = dirname
-        super().__init__()
-        model_paths = self.find_models(ext_filter=[".pt", ".pth"])
-        scalers = []
-        if len(model_paths) == 0:
-            scaler_data = UpscalerData(self.model_name, self.model_url, self, 4)
-            scalers.append(scaler_data)
-        for file in model_paths:
-            if file.startswith("http"):
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(file)
+        self.model_dir = model_dir
+        self.model_name = model_name
+        self.scale = scale
+        self.model = None
 
-            scaler_data = UpscalerData(name, file, self, 4)
-            self.scalers.append(scaler_data)
-
-    def do_upscale(self, img, selected_model):
+    # tile 0 to 512
+    # overlap 0 to 48
+    def do_upscale(self, img, tile = 0, overlap = 0):
         try:
-            model = self.load_model(selected_model)
+            if self.model is None:
+                self.load_model()
+
         except Exception as e:
-            print(f"Unable to load ESRGAN model {selected_model}: {e}", file=sys.stderr)
+            print(f"Unable to load ESRGAN model {self.model_name}: {e}", file=sys.stderr)
             return img
-        model.to(self.device_esrgan)
-        img = esrgan_upscale(model, img)
+        
+        self.model.to(self.device_esrgan)
+        img = self.esrgan_upscale(img, tile, overlap)
+
         return img
 
-    def load_model(self, path: str):
-        if path.startswith("http"):
-            # TODO: this doesn't use `path` at all?
-            filename = modelloader.load_file_from_url(
-                url=self.model_url,
-                model_dir=self.model_download_path,
-                file_name=f"{self.model_name}.pth",
-            )
-        else:
-            filename = path
+    def load_model(self):
+        filename = os.path.join(self.model_dir, f"{self.model_name}.pth")
 
         state_dict = torch.load(filename, map_location='cpu' if self.device_esrgan.type == 'mps' else None)
 
@@ -186,20 +167,18 @@ class UpscalerESRGAN(Upscaler):
 
         in_nc, out_nc, nf, nb, plus, mscale = infer_params(state_dict)
 
-        model = arch.RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=nf, nb=nb, upscale=mscale, plus=plus)
-        model.load_state_dict(state_dict)
-        model.eval()
+        self.model = arch.RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=nf, nb=nb, upscale=mscale, plus=plus)
+        self.model.load_state_dict(state_dict)
+        self.model.eval()
 
-        return model
-
-    def upscale_without_tiling(self, model, img):
+    def upscale_without_tiling(self, img):
         img = np.array(img)
         img = img[:, :, ::-1]
         img = np.ascontiguousarray(np.transpose(img, (2, 0, 1))) / 255
         img = torch.from_numpy(img).float()
         img = img.unsqueeze(0) # .to(devices.device_esrgan)
         with torch.no_grad():
-            output = model(img)
+            output = self.model(img)
         output = output.squeeze().float().cpu().clamp_(0, 1).numpy()
         output = 255. * np.moveaxis(output, 0, 2)
         output = output.astype(np.uint8)
@@ -207,11 +186,11 @@ class UpscalerESRGAN(Upscaler):
         return Image.fromarray(output, 'RGB')
 
 
-    def esrgan_upscale(self, model, img):
-        if opts.ESRGAN_tile == 0:
-            return self.upscale_without_tiling(model, img)
+    def esrgan_upscale(self, img, tile, overlap):
+        if tile == 0:
+            return self.upscale_without_tiling(img)
 
-        grid = images.split_grid(img, opts.ESRGAN_tile, opts.ESRGAN_tile, opts.ESRGAN_tile_overlap)
+        grid = image_grid.split_grid(img, tile, tile, overlap)
         newtiles = []
         scale_factor = 1
 
@@ -220,12 +199,12 @@ class UpscalerESRGAN(Upscaler):
             for tiledata in row:
                 x, w, tile = tiledata
 
-                output = self.upscale_without_tiling(model, tile)
+                output = self.upscale_without_tiling(tile)
                 scale_factor = output.width // tile.width
 
                 newrow.append([x * scale_factor, w * scale_factor, output])
             newtiles.append([y * scale_factor, h * scale_factor, newrow])
 
-        newgrid = images.Grid(newtiles, grid.tile_w * scale_factor, grid.tile_h * scale_factor, grid.image_w * scale_factor, grid.image_h * scale_factor, grid.overlap * scale_factor)
-        output = images.combine_grid(newgrid)
+        newgrid = image_grid.Grid(newtiles, grid.tile_w * scale_factor, grid.tile_h * scale_factor, grid.image_w * scale_factor, grid.image_h * scale_factor, grid.overlap * scale_factor)
+        output = image_grid.combine_grid(newgrid)
         return output

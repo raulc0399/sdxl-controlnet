@@ -1,7 +1,15 @@
 from PIL import Image
+import numpy as np
+import math
+from dataclasses import dataclass
 
-Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])
-
+class Grid:
+    tiles: list
+    tile_w: int
+    tile_h: int
+    image_w: int
+    image_h: int
+    overlap: int
 
 def split_grid(image, tile_w=512, tile_h=512, overlap=64):
     w = image.width
