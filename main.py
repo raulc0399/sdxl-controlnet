@@ -305,7 +305,7 @@ sun's position in the morning, on a warm sunny day.
         negative_prompt,
         negative_prompt_2,
         CONTROL_IMAGE_URL,
-        upscale=True
+        upscale=False
     )
 
     ImageUtils.save_image_with_timestamp(image)
