@@ -1,6 +1,7 @@
-﻿numpy
+﻿# first install torch using:
+# pip3 install torch --index-url https://download.pytorch.org/whl/cu121
+numpy
 opencv-python
---extra-index-url https://download.pytorch.org/whl/cu121
-torch
 diffusers[torch]
 accelerate
+compel
