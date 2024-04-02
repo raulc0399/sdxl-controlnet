@@ -246,7 +246,7 @@ class DiffusionRunner:
             "controlnet_conditioning_scale": 0.5,
             "image": canny_image,
             "num_inference_steps": 40,
-            "guide_scale": 4.0,
+            "guidance_scale": 4.0,
         }
 
         if self.use_refiner:
