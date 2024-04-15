@@ -330,8 +330,8 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
 
                     experiment_no += 1
 
-                    if experiment_no == 10:
-                        exit()
+                    # if experiment_no == 10:
+                    #     exit()
 
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
