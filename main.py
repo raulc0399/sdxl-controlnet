@@ -287,25 +287,39 @@ class ImageUtils:
         path = os.path.join(folder, filename)  # Create the full path for the file
         image.save(path)
 
+def run_diffusion_experiments(control_image_url, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals):
+    for prompt in prompts:
+        for controlnet_conditioning_scale in controlnet_conditioning_scale_vals:
+            for num_inference_steps in num_inference_steps_vals:
+                for guidance_scale in guidance_scale_vals:
+                    image, upscaled_image = diffusion_runner.run(
+                        prompt,
+                        control_image_url,
+                        controlnet_conditioning_scale,
+                        num_inference_steps,
+                        guidance_scale
+                    )
+                    
+                    ImageUtils.save_image_with_timestamp(image)
+
+                    if upscaled_image is not None:
+                        ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
+
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
 
-    prompts, negative_prompts
+    controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
+    num_inference_steps_vals = [20, 30, 40]
+    guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
 
+    negative_prompt = ""
     prompt_2 = ""
     negative_prompt_2 = ""
 
-    diffusion_runner = DiffusionRunner()
-    image, upscaled_image = diffusion_runner.run(
-        prompt,
-        prompt_2,
-        negative_prompt,
-        negative_prompt_2,
-        CONTROL_IMAGE_URL,
-        upscale=False
-    )
+    diffusion_runner = DiffusionRunner(use_sdxl=True)
+    run_diffusion_experiments(CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
-    ImageUtils.save_image_with_timestamp(image)
+    del diffusion_runner
 
-    if upscaled_image is not None:
-        ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
+    diffusion_runner = DiffusionRunner(use_sdxl=False)
+    run_diffusion_experiments(CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
