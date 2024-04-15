@@ -104,20 +104,22 @@ class ControlNetCannyProcessor:
 
 
 class DiffusionRunner:
-    BASE_PATH = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
-    # BASE_PATH = "/home/raul/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
+    BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
+    BASE_PATH_SDXL = "/home/raul/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
     # VAE_PATH = "/home/raul/codelab/models/sdxl_vae.safetensors"
     REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-canny-sdxl-1.0"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
-    def __init__(self, use_refiner=False):
+    def __init__(self, use_sdxl = True, use_refiner=False):
         self.use_refiner = use_refiner
         self.controlnet = None
         self.pipe = None
         self.refiner = None
         self.compel_proc = None
         self.upscalePipeline = None
+        
+        self.model_path = self.BASE_PATH_SDXL if use_sdxl else self.BASE_PATH_JUGGERNAUTXL
 
     def load_controlnet(self):
         self.controlnet = ControlNetModel.from_pretrained(
@@ -130,7 +132,7 @@ class DiffusionRunner:
     def load_base(self):
         assert self.controlnet is not None, "Controlnet must be loaded first"
         self.pipe = StableDiffusionXLControlNetPipeline.from_single_file(
-            self.BASE_PATH,
+            self.model_path,
             controlnet=self.controlnet,
             torch_dtype=torch.float16,
             use_safetensors=True,
