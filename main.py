@@ -19,6 +19,7 @@ from PIL import Image
 from compel import Compel, ReturnedEmbeddingsType
 
 from prompts import prompts
+import json
 
 def pad64(x):
     return int(np.ceil(float(x) / 64.0) * 64 - x)
@@ -279,15 +280,21 @@ class DiffusionRunner:
 
 class ImageUtils:
     @staticmethod
-    def save_image_with_timestamp(image, suffix="generated"):
+    def save_image_with_timestamp(image, suffix="generated", params=None):
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         filename = f"{timestamp}-{suffix}.jpg"
         folder = "./gen_imgs"
         os.makedirs(folder, exist_ok=True)  # Ensure the directory exists
-        path = os.path.join(folder, filename)  # Create the full path for the file
-        image.save(path)
 
-def run_diffusion_experiments(diffusion_runner, control_image_url, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals):
+        file_path = os.path.join(folder, filename)  # Create the full path for the file
+        image.save(file_path)
+
+        if params is not None:
+            json_file_path = file_path.replace(".jpg", ".json")
+            with open(json_file_path, "w") as json_file:
+                json.dump(params, json_file)
+
+def run_diffusion_experiments(diffusion_runner, model, control_image_url, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals):
 
     all_experiments_count = len(prompts) * len(controlnet_conditioning_scale_vals) * len(num_inference_steps_vals) * len(guidance_scale_vals)
     experiment_no = 1
@@ -306,12 +313,23 @@ def run_diffusion_experiments(diffusion_runner, control_image_url, controlnet_co
                         guidance_scale
                     )
                     
-                    ImageUtils.save_image_with_timestamp(image)
+                    params = {
+                        "model": model,
+                        "prompt": prompt,
+                        "control_image_url": control_image_url,
+                        "controlnet_conditioning_scale": controlnet_conditioning_scale,
+                        "num_inference_steps": num_inference_steps,
+                        "guidance_scale": guidance_scale,
+                    }
+
+                    ImageUtils.save_image_with_timestamp(image, params=params)
 
                     if upscaled_image is not None:
                         ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
 
                     experiment_no += 1
+
+                    exit()
 
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
@@ -325,9 +343,9 @@ if __name__ == "__main__":
     negative_prompt_2 = ""
 
     diffusion_runner = DiffusionRunner(use_sdxl=True)
-    run_diffusion_experiments(diffusion_runner, CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "sdxl", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
     del diffusion_runner
 
     diffusion_runner = DiffusionRunner(use_sdxl=False)
-    run_diffusion_experiments(diffusion_runner, CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "juggernaut", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
