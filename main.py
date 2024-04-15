@@ -18,6 +18,7 @@ import os
 from PIL import Image
 from compel import Compel, ReturnedEmbeddingsType
 
+from prompts import prompts
 
 def pad64(x):
     return int(np.ceil(float(x) / 64.0) * 64 - x)
@@ -103,11 +104,11 @@ class ControlNetCannyProcessor:
 
 
 class DiffusionRunner:
-    BASE_PATH = r":~/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
-    # BASE_PATH = r"~/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
-    # VAE_PATH = r"~/codelab/models/sdxl_vae.safetensors"
-    REFINER_PATH = r"~/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
-    CANNY_CONTROLNET_PATH = r"~/codelab/models/controlnet-canny-sdxl-1.0"
+    BASE_PATH = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
+    # BASE_PATH = "/home/raul/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
+    # VAE_PATH = "/home/raul/codelab/models/sdxl_vae.safetensors"
+    REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
+    CANNY_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-canny-sdxl-1.0"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
     def __init__(self, use_refiner=False):
@@ -207,7 +208,9 @@ class DiffusionRunner:
         return callback_kwargs
 
     def run(
-        self, prompt, prompt_2, negative_prompt, negative_prompt_2, control_image_url, upscale=False
+        self, prompt, control_image_url, controlnet_conditioning_scale = 0.5, num_inference_steps = 40, guidance_scale = 4.0, 
+        # not used for now
+        upscale=False, prompt_2=None, negative_prompt=None, negative_prompt_2=None,
     ):
         if self.controlnet is None:
             self.load_controlnet()
@@ -238,15 +241,17 @@ class DiffusionRunner:
         diffusion_args = {
             "prompt_embeds": conditioning,
             "pooled_prompt_embeds": pooled,
-            "generator": generator,
             # "prompt": prompt,
             # "prompt_2": prompt_2,
             # "negative_prompt": negative_prompt,
             # "negative_prompt_2": negative_prompt_2,
-            "controlnet_conditioning_scale": 0.5,
+
+            "generator": generator,
+
+            "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": canny_image,
-            "num_inference_steps": 40,
-            "guidance_scale": 4.0,
+            "num_inference_steps": num_inference_steps,
+            "guidance_scale": guidance_scale,
         }
 
         if self.use_refiner:
@@ -275,29 +280,17 @@ class ImageUtils:
     def save_image_with_timestamp(image, suffix="generated"):
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         filename = f"{timestamp}-{suffix}.jpg"
-        folder = ".\gen_imgs"
+        folder = "./gen_imgs"
         os.makedirs(folder, exist_ok=True)  # Ensure the directory exists
         path = os.path.join(folder, filename)  # Create the full path for the file
         image.save(path)
 
 if __name__ == "__main__":
-    CONTROL_IMAGE_URL = r"D:\raul\stuff\objs\obj4\4j.jpg"
+    CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
 
-    # prompt = "A realistic image of a modern house in the suburbs of a modern city, showcasing a unique blend of classic architecture with contemporary elements. The house is not on the main street, surrounded by a variety of vegetation. It should display features typical of traditional German houses, such as steep gabled roofs or timber framing, integrated with modern design aspects like geometric (quadratic) shapes and large glass panels. Vary the angle of the image for a different perspective, and alter the sun's position to change the lighting, creating distinctive shadows and highlights. The surrounding environment should have diverse trees and shrubs, reinforcing the house's connection with nature. The scene is captured on a sunny day to accentuate the fusion of architectural styles"
-    # prompt = "a 3d rendering of a row of houses with realistic staircase between the floors, sunny, white exterior, warm day, modern city suburb"
-    # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
-    # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
-    # prompt = ""RAW photo of house in german suburb, nice warm, day, sunny, white exterior""
-    # prompt = "architectural rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
-
-    prompt = """A 3d rendering of a modern house in the suburbs of a modern city. Stairs between the floors.
-The house is not on the main street, nice clean vegetation.
-sun's position in the morning, on a warm sunny day. 
-"""
+    prompts, negative_prompts
 
     prompt_2 = ""
-
-    negative_prompt = "semi-realistic, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate"
     negative_prompt_2 = ""
 
     diffusion_runner = DiffusionRunner()
