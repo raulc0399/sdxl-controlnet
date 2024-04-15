@@ -316,11 +316,11 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                     
                     params = {
                         "model": model,
-                        "control_image_url": control_image_url,
                         "controlnet_conditioning_scale": controlnet_conditioning_scale,
                         "num_inference_steps": num_inference_steps,
                         "guidance_scale": guidance_scale,
                         "prompt": prompt,
+                        "control_image_url": control_image_url,
                     }
 
                     ImageUtils.save_image_with_timestamp(image, params=params)
