@@ -103,11 +103,11 @@ class ControlNetCannyProcessor:
 
 
 class DiffusionRunner:
-    BASE_PATH = r"D:\raul\models\juggernautXL_v8Rundiffusion.safetensors"
-    # BASE_PATH = r"D:\raul\models\sd_xl_base_1.0_0.9vae.safetensors"
-    # VAE_PATH = r"D:\raul\models\sdxl_vae.safetensors"
-    REFINER_PATH = r"D:\raul\models\sd_xl_refiner_1.0_0.9vae.safetensors"
-    CANNY_CONTROLNET_PATH = r"D:\raul\models\controlnet-canny-sdxl-1.0"
+    BASE_PATH = r":~/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
+    # BASE_PATH = r"~/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
+    # VAE_PATH = r"~/codelab/models/sdxl_vae.safetensors"
+    REFINER_PATH = r"~/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
+    CANNY_CONTROLNET_PATH = r"~/codelab/models/controlnet-canny-sdxl-1.0"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
     def __init__(self, use_refiner=False):
@@ -287,6 +287,8 @@ if __name__ == "__main__":
     # prompt = "a 3d rendering of a row of houses with realistic staircase between the floors, sunny, white exterior, warm day, modern city suburb"
     # prompt = "Architecture photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
     # prompt = "Hyperdetailed photography of a row of houses with a staircase between the floors, sunny, white exterior, warm day, modern city"
+    # prompt = ""RAW photo of house in german suburb, nice warm, day, sunny, white exterior""
+    # prompt = "architectural rendering of houses of same design in modern city suburb, starirs between the levels, nice warm, day, sunny, white exterior"
 
     prompt = """A 3d rendering of a modern house in the suburbs of a modern city. Stairs between the floors.
 The house is not on the main street, nice clean vegetation.
