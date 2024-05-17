@@ -46,9 +46,13 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
 if __name__ == "__main__":
     CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
 
+    # controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
+    # num_inference_steps_vals = [20, 30, 40]
+    # guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
+
     controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
-    num_inference_steps_vals = [20, 30, 40]
-    guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
+    num_inference_steps_vals = [20]
+    guidance_scale_vals = [2.0, 5.0, 7.0]
 
     negative_prompt = ""
     prompt_2 = ""
