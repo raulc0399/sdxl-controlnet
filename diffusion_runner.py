@@ -230,9 +230,9 @@ class DiffusionRunner:
 
         # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
         generator = None
-        if seeds is not None:
-            assert len(seeds) == num_images, "The length of seeds array must be equal to num_images."
-            generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
+        # if seeds is not None:
+        #     assert len(seeds) == num_images, "The length of seeds array must be equal to num_images."
+        #     generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
 
         diffusion_args = {
             # "prompt_embeds": conditioning,
@@ -246,7 +246,7 @@ class DiffusionRunner:
             "image": canny_image,
             "num_inference_steps": num_inference_steps,
             "guidance_scale": guidance_scale,
-            "num_images_per_prompt": num_images,
+            "num_images_per_prompt": 1,
         }
 
         print("Parameters for diffuser:")
@@ -257,7 +257,7 @@ class DiffusionRunner:
         print("controlnet_conditioning_scale:", controlnet_conditioning_scale)
         print("num_inference_steps:", num_inference_steps)
         print("guidance_scale:", guidance_scale)
-        print("seeds:", seeds)
+        # print("seeds:", seeds)
 
         if self.use_refiner:
             diffusion_args["output_type"] = "latent"
