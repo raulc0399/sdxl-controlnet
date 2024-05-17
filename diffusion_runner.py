@@ -223,36 +223,41 @@ class DiffusionRunner:
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
         
-        # self.pipe.unet = torch.compile(self.pipe.unet, mode="reduce-overhead", fullgraph=True)
-        # self.pipe.controlnet = torch.compile(self.pipe.controlnet, mode="reduce-overhead", fullgraph=True)
-
         canny_image = ControlNetCannyProcessor.process(control_image_url)
         ImageUtils.save_image_with_timestamp(canny_image, "canny")
-
-        conditioning, pooled = self.compel(prompt)
+        
+        # conditioning, pooled = self.compel(prompt)
 
         # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
         generator = None
-        seed = None  # set to 0 for random, or to a specific seed value
-        if seed is not None:
-            torch.manual_seed(seed)
-            generator = [torch.Generator(device="cuda").manual_seed(seed)]
+        if seeds is not None:
+            assert len(seeds) == num_images, "The length of seeds array must be equal to num_images."
+            generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
 
         diffusion_args = {
-            "prompt_embeds": conditioning,
-            "pooled_prompt_embeds": pooled,
-            # "prompt": prompt,
-            # "prompt_2": prompt_2,
-            # "negative_prompt": negative_prompt,
-            # "negative_prompt_2": negative_prompt_2,
-
+            # "prompt_embeds": conditioning,
+            # "pooled_prompt_embeds": pooled,
             "generator": generator,
-
+            "prompt": prompt,
+            "prompt_2": prompt_2,
+            "negative_prompt": negative_prompt,
+            "negative_prompt_2": negative_prompt_2,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": canny_image,
             "num_inference_steps": num_inference_steps,
             "guidance_scale": guidance_scale,
+            "num_images_per_prompt": num_images,
         }
+
+        print("Parameters for diffuser:")
+        print("prompt:", prompt)
+        print("prompt_2:", prompt_2)
+        print("negative_prompt:", negative_prompt)
+        print("negative_prompt_2:", negative_prompt_2)
+        print("controlnet_conditioning_scale:", controlnet_conditioning_scale)
+        print("num_inference_steps:", num_inference_steps)
+        print("guidance_scale:", guidance_scale)
+        print("seeds:", seeds)
 
         if self.use_refiner:
             diffusion_args["output_type"] = "latent"
