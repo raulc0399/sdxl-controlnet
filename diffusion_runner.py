@@ -128,7 +128,8 @@ class ControlNetType(Enum):
     MISTO = "misto"
 
 class DiffusionRunner:
-    BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
+    # BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
+    BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/Juggernaut_X_RunDiffusion.safetensors"
     BASE_PATH_SDXL = "/home/raul/codelab/models/sd_xl_base_1.0_0.9vae.safetensors"
     # VAE_PATH = "/home/raul/codelab/models/sdxl_vae.safetensors"
     REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
