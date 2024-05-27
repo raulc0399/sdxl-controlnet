@@ -144,7 +144,13 @@ class DiffusionRunner:
         self.model_path = self.BASE_PATH_SDXL if use_sdxl else self.BASE_PATH_JUGGERNAUTXL
 
     def load_controlnet(self):
-        controlnet_path = self.CANNY_CONTROLNET_PATH if self.controlnet_type == "canny" else self.DEPTH_CONTROLNET_PATH
+        if self.controlnet_type == "misto":
+            controlnet_path = self.MISTOLINE_CONTROLNET_PATH
+        elif self.controlnet_type == "depth":
+            controlnet_path = self.DEPTH_CONTROLNET_PATH
+        else:
+            controlnet_path = self.CANNY_CONTROLNET_PATH
+        
         self.controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
             torch_dtype=torch.float16,
