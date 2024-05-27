@@ -100,6 +100,24 @@ class ControlNetCannyProcessor:
         canny_image = Image.fromarray(image)
         return canny_image
 
+class ImageProcessor:
+    @staticmethod
+    def preprocess_control_image(image_path, dimension=1024):
+        image = Image.open(image_path)
+        
+        width, height = image.size
+        crop_size = min(width, height)
+        
+        left = (width - crop_size) // 2
+        top = (height - crop_size) // 2
+        right = left + crop_size
+        bottom = top + crop_size
+        
+        image = image.crop((left, top, right, bottom))
+        image = image.resize((dimension, dimension))
+        
+        return image
+
 
 class DiffusionRunner:
     BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
@@ -227,7 +245,7 @@ class DiffusionRunner:
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
         
-        processed_image = self.preprocess_control_image(control_image_url)
+        processed_image = ImageProcessor.preprocess_control_image(control_image_url)
         ImageUtils.save_image_with_timestamp(processed_image, "preprocessed")
         
         # conditioning, pooled = self.compel(prompt)
@@ -282,18 +300,3 @@ class DiffusionRunner:
             upscaled_image = self.run_upscaler(prompt, image)
 
         return image, upscaled_image
-    def preprocess_control_image(self, image_path):
-        image = Image.open(image_path)
-        
-        width, height = image.size
-        crop_size = min(width, height)
-        
-        left = (width - crop_size) // 2
-        top = (height - crop_size) // 2
-        right = left + crop_size
-        bottom = top + crop_size
-        
-        image = image.crop((left, top, right, bottom))
-        image = image.resize((1024, 1024))
-        
-        return image
