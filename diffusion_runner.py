@@ -209,6 +209,7 @@ class DiffusionRunner:
 
     def run(
         self, prompt, control_image_url, controlnet_conditioning_scale = 0.5, num_inference_steps = 40, guidance_scale = 4.0, 
+        seeds=None, num_images=1,
         # not used for now
         upscale=False, prompt_2=None, negative_prompt=None, negative_prompt_2=None,
     ):
@@ -230,9 +231,9 @@ class DiffusionRunner:
 
         # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
         generator = None
-        # if seeds is not None:
-        #     assert len(seeds) == num_images, "The length of seeds array must be equal to num_images."
-        #     generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
+        if seeds is not None:
+            assert len(seeds) == num_images, "The length of seeds array must be equal to num_images."
+            generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
 
         diffusion_args = {
             # "prompt_embeds": conditioning,

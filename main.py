@@ -9,6 +9,8 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
     all_experiments_count = len(prompts) * len(controlnet_conditioning_scale_vals) * len(num_inference_steps_vals) * len(guidance_scale_vals)
     experiment_no = 1
 
+    seed = 438233955
+
     for prompt in prompts:
         for controlnet_conditioning_scale in controlnet_conditioning_scale_vals:
             for num_inference_steps in num_inference_steps_vals:
@@ -21,7 +23,8 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                         control_image_url,
                         controlnet_conditioning_scale,
                         num_inference_steps,
-                        guidance_scale
+                        guidance_scale,
+                        seeds=[seed],
                     )
                     
                     params = {
@@ -31,6 +34,7 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                         "guidance_scale": guidance_scale,
                         "prompt": prompt,
                         "control_image_url": control_image_url,
+                        "seed": seed
                     }
 
                     ImageUtils.save_image_with_timestamp(image, params=params)
@@ -44,15 +48,16 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                     #     exit()
 
 if __name__ == "__main__":
-    CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
+    # CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
+    CONTROL_IMAGE_URL = "/home/raul/codelab/objs/input_imgs/a_edges.png"
 
     # controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
     # num_inference_steps_vals = [20, 30, 40]
     # guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
 
-    controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
-    num_inference_steps_vals = [20]
-    guidance_scale_vals = [2.0, 5.0, 7.0]
+    controlnet_conditioning_scale_vals = [1.0, 1.5]
+    num_inference_steps_vals = [25]
+    guidance_scale_vals = [5.0, 7.0]
 
     negative_prompt = ""
     prompt_2 = ""
