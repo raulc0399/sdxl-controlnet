@@ -115,6 +115,9 @@ class ImageProcessor:
         
         image = image.crop((left, top, right, bottom))
         image = image.resize((dimension, dimension))
+
+        if image.mode in ("RGBA", "P"): 
+            image = image.convert("RGB")
         
         return image
 
@@ -246,8 +249,6 @@ class DiffusionRunner:
         #                                                             use_karras_sigmas=True)
         
         processed_image = ImageProcessor.preprocess_control_image(control_image_url)
-        if processed_image.format == "PNG":
-            processed_image = processed_image.convert("RGB")
         ImageUtils.save_image_with_timestamp(processed_image, "preprocessed")
         
         # conditioning, pooled = self.compel(prompt)
