@@ -65,6 +65,8 @@ if __name__ == "__main__":
     seed = 477162132
 
     generate_sdxl = False
+    generate_with_depth = False
+
     if(generate_sdxl):
         diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type="canny")
         run_diffusion_experiments(diffusion_runner, "sdxl-canny", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
@@ -81,5 +83,6 @@ if __name__ == "__main__":
 
     del diffusion_runner
     
-    diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="depth")
-    run_diffusion_experiments(diffusion_runner, "juggernaut-depth", DEPTH_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
+    if generate_with_depth:
+        diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="depth")
+        run_diffusion_experiments(diffusion_runner, "juggernaut-depth", DEPTH_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
