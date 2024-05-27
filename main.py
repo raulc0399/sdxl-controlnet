@@ -49,7 +49,8 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
 
 if __name__ == "__main__":
     # CONTROL_IMAGE_URL = "/home/raul/codelab/objs/obj4/4j.jpg"
-    CONTROL_IMAGE_URL = "/home/raul/codelab/objs/input_imgs/a_edges.png"
+    CANNY_CONTROL_IMAGE_URL = "/home/raul/codelab/objs/input_imgs/a_edges.png"
+    DEPTH_CONTROL_IMAGE_URL = "/home/raul/codelab/objs/input_imgs/a_depth.png"
 
     # controlnet_conditioning_scale_vals = [0.5, 1.0, 1.5]
     # num_inference_steps_vals = [20, 30, 40]
@@ -64,19 +65,19 @@ if __name__ == "__main__":
     negative_prompt_2 = ""
 
     diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type="canny")
-    run_diffusion_experiments(diffusion_runner, "sdxl-canny", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "sdxl-canny", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
     del diffusion_runner
 
     diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type="depth")  
-    run_diffusion_experiments(diffusion_runner, "sdxl-depth", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "sdxl-depth", DEPTH_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
     del diffusion_runner
 
     diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="canny")
-    run_diffusion_experiments(diffusion_runner, "juggernaut-canny", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "juggernaut-canny", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
     del diffusion_runner
     
     diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="depth")
-    run_diffusion_experiments(diffusion_runner, "juggernaut-depth", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    run_diffusion_experiments(diffusion_runner, "juggernaut-depth", DEPTH_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
