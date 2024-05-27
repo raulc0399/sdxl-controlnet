@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
 
     controlnet_conditioning_scale_vals = [1.0]
-    num_inference_steps_vals = [25]
+    num_inference_steps_vals = [25, 30]
     guidance_scale_vals = [7.0]
 
     negative_prompt = ""

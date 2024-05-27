@@ -263,7 +263,7 @@ class DiffusionRunner:
         # change scheduler
         self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
                                                                       algorithm_type="sde-dpmsolver++",
-                                                                      use_karras_sigmas=False)
+                                                                      use_karras_sigmas=True)
         
         processed_image = ImageProcessor.preprocess_control_image(control_image_url)
         ImageUtils.save_image_with_timestamp(processed_image, "preprocessed")
@@ -290,6 +290,12 @@ class DiffusionRunner:
             "guidance_scale": guidance_scale,
             "num_images_per_prompt": 1,
         }
+
+        # added params for mistoline: https://github.com/TheMistoAI/MistoLine?tab=readme-ov-file
+        if self.controlnet_type == ControlNetType.MISTO:
+            print("\033[31mUsing MistoLine controlnet with extra parameters\033[0m")
+            diffusion_args["control_guidance_end"] = 0.9
+            diffusion_args["strength"] = 0.93
 
         print("Parameters for diffuser:")
         print("prompt:", prompt)
