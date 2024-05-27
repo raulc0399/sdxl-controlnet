@@ -134,7 +134,7 @@ class DiffusionRunner:
     REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-canny-sdxl-1.0"
     DEPTH_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-depth-sdxl-1.0"
-    MISTOLINE_CONTROLNET_PATH = "/home/raul/codelab/models/mistoLine_fp16"
+    MISTOLINE_CONTROLNET_PATH = "/home/raul/codelab/models/mistoLine"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
     def __init__(self, use_sdxl = True, use_refiner=False, controlnet_type="canny"):
@@ -158,7 +158,7 @@ class DiffusionRunner:
         else:
             raise ValueError(f"Unknown controlnet type: {self.controlnet_type}")
         
-        print(f"\033[94mLoading controlnet from: {controlnet_path}\033[0m")
+        print(f"\033[36mLoading controlnet from: {controlnet_path}\033[0m")
 
         self.controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
