@@ -78,11 +78,24 @@ if __name__ == "__main__":
 
         del diffusion_runner
 
+        diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type=ControlNetType.MISTO)
+        run_diffusion_experiments(diffusion_runner, "sdxl-misto", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
+
+        del diffusion_runner
+
     diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type=ControlNetType.CANNY)
     run_diffusion_experiments(diffusion_runner, "juggernaut-canny", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
+
+    del diffusion_runner
+
+    diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type=ControlNetType.MISTO)
+    run_diffusion_experiments(diffusion_runner, "juggernaut-misto", CANNY_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
 
     del diffusion_runner
     
     if generate_with_depth:
         diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type=ControlNetType.DEPTH)
         run_diffusion_experiments(diffusion_runner, "juggernaut-depth", DEPTH_CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals, seed)
+
+        del diffusion_runner
+
