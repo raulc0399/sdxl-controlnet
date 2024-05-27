@@ -250,9 +250,9 @@ class DiffusionRunner:
 
     def run(
         self, prompt, control_image_url, controlnet_conditioning_scale = 0.5, num_inference_steps = 40, guidance_scale = 4.0, 
-        seeds=None, num_images=1,
+        seeds=None, num_images=1, negative_prompt=None,
         # not used for now
-        upscale=False, prompt_2=None, negative_prompt=None, negative_prompt_2=None,
+        upscale=False,
     ):
         if self.controlnet is None:
             self.load_controlnet()
@@ -281,9 +281,7 @@ class DiffusionRunner:
             # "pooled_prompt_embeds": pooled,
             "generator": generator,
             "prompt": prompt,
-            "prompt_2": prompt_2,
             "negative_prompt": negative_prompt,
-            "negative_prompt_2": negative_prompt_2,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": processed_image,
             "num_inference_steps": num_inference_steps,
