@@ -158,7 +158,7 @@ class DiffusionRunner:
         else:
             raise ValueError(f"Unknown controlnet type: {self.controlnet_type}")
         
-        print(f"Loading controlnet from: {controlnet_path}")
+        print(f"\033[94mLoading controlnet from: {controlnet_path}\033[0m")
 
         self.controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
