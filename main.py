@@ -8,7 +8,7 @@ def run_diffusion_experiments(diffusion_runner, models_used, control_image_url, 
 
     all_experiments_count = len(prompts) * len(controlnet_conditioning_scale_vals) * len(num_inference_steps_vals) * len(guidance_scale_vals)
     experiment_no = 1
-    
+
     for prompt in prompts:
         for controlnet_conditioning_scale in controlnet_conditioning_scale_vals:
             for num_inference_steps in num_inference_steps_vals:
@@ -55,14 +55,14 @@ if __name__ == "__main__":
     # guidance_scale_vals = [1.0, 2.0, 4.0, 5.0]
 
     controlnet_conditioning_scale_vals = [1.0]
-    num_inference_steps_vals = [30]
+    num_inference_steps_vals = [25]
     guidance_scale_vals = [7.0]
 
     negative_prompt = ""
     prompt_2 = ""
     negative_prompt_2 = ""
 
-    seed = 4009219915
+    seed = 477162132
 
     generate_sdxl = False
     if(generate_sdxl):

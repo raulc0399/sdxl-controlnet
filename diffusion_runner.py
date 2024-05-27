@@ -129,6 +129,7 @@ class DiffusionRunner:
     REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-canny-sdxl-1.0"
     DEPTH_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-depth-sdxl-1.0"
+    MISTOLINE_CONTROLNET_PATH = "/home/raul/codelab/models/mistoLine_fp16"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
     def __init__(self, use_sdxl = True, use_refiner=False, controlnet_type="canny"):
@@ -244,9 +245,9 @@ class DiffusionRunner:
             self.load_base()
 
         # change scheduler
-        # self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
-        #                                                             #   algorithm_type="sde-dpmsolver++",
-        #                                                             use_karras_sigmas=True)
+        self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config,
+                                                                      algorithm_type="sde-dpmsolver++",
+                                                                      use_karras_sigmas=False)
         
         processed_image = ImageProcessor.preprocess_control_image(control_image_url)
         ImageUtils.save_image_with_timestamp(processed_image, "preprocessed")
