@@ -14,23 +14,25 @@ def run_diffusion_experiments(diffusion_runner, models_used, control_image_url, 
             for num_inference_steps in num_inference_steps_vals:
                 for guidance_scale in guidance_scale_vals:
                     print(f"Running experiment {experiment_no} from {all_experiments_count} experiments")
-                    print(f"Model: {models_used}, Controlnet Conditioning Scale: {controlnet_conditioning_scale}, Num Inference Steps: {num_inference_steps}, Guidance Scale: {guidance_scale}, Prompt: {prompt:.20}")
+                    print(f"Model: {models_used}, Controlnet Conditioning Scale: {controlnet_conditioning_scale}, Num Inference Steps: {num_inference_steps}, Guidance Scale: {guidance_scale}, Prompt: {prompt[0]:.20}")
 
                     image, upscaled_image = diffusion_runner.run(
-                        prompt,
+                        prompt[0],
                         control_image_url,
                         controlnet_conditioning_scale,
                         num_inference_steps,
                         guidance_scale,
                         seeds=[seed],
+                        negative_prompt=prompt[1]
                     )
                     
-                    params = {
+                    params = { 
                         "model": models_used,
                         "controlnet_conditioning_scale": controlnet_conditioning_scale,
                         "num_inference_steps": num_inference_steps,
                         "guidance_scale": guidance_scale,
-                        "prompt": prompt,
+                        "prompt": prompt[0],
+                        "negative_prompt": prompt[1],
                         "control_image_url": control_image_url,
                         "seed": seed
                     }
