@@ -268,7 +268,12 @@ class DiffusionRunner:
         processed_image = ImageProcessor.preprocess_control_image(control_image_url)
         ImageUtils.save_image_with_timestamp(processed_image, "preprocessed")
         
-        # conditioning, pooled = self.compel(prompt)
+        conditioning, pooled = self.compel(prompt)
+
+        negative_conditioning = None
+        negative_pooled = None
+        if negative_prompt is None:
+            negative_conditioning, negative_pooled = self.compel(negative_prompt)
 
         # check https://huggingface.co/docs/diffusers/v0.13.0/en/using-diffusers/reproducibility
         generator = None
@@ -277,11 +282,14 @@ class DiffusionRunner:
             generator = [torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
 
         diffusion_args = {
-            # "prompt_embeds": conditioning,
-            # "pooled_prompt_embeds": pooled,
             "generator": generator,
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
+            "prompt_embeds": conditioning,
+            "pooled_prompt_embeds": pooled,
+            "negative_prompt_embeds": negative_conditioning,
+            "negative_pooled_prompt_embeds": negative_pooled,
+
+            # "prompt": prompt,
+            # "negative_prompt": negative_prompt,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
             "image": processed_image,
             "num_inference_steps": num_inference_steps,

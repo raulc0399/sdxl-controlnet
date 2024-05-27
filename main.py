@@ -13,7 +13,7 @@ def run_diffusion_experiments(diffusion_runner, models_used, control_image_url, 
         for controlnet_conditioning_scale in controlnet_conditioning_scale_vals:
             for num_inference_steps in num_inference_steps_vals:
                 for guidance_scale in guidance_scale_vals:
-                    print(f"Running experiment {experiment_no} from {all_experiments_count} experiments")
+                    print("\033[33m" + f"Running experiment {experiment_no} from {all_experiments_count} experiments" + "\033[0m")
                     print(f"Model: {models_used}, Controlnet Conditioning Scale: {controlnet_conditioning_scale}, Num Inference Steps: {num_inference_steps}, Guidance Scale: {guidance_scale}, Prompt: {prompt[0]:.20}")
 
                     image, upscaled_image = diffusion_runner.run(
