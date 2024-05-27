@@ -107,10 +107,12 @@ class DiffusionRunner:
     # VAE_PATH = "/home/raul/codelab/models/sdxl_vae.safetensors"
     REFINER_PATH = "/home/raul/codelab/models/sd_xl_refiner_1.0_0.9vae.safetensors"
     CANNY_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-canny-sdxl-1.0"
+    DEPTH_CONTROLNET_PATH = "/home/raul/codelab/models/controlnet-depth-sdxl-1.0"
     UPSCALER_MODEL_ID = "stabilityai/stable-diffusion-x4-upscaler"
 
-    def __init__(self, use_sdxl = True, use_refiner=False):
+    def __init__(self, use_sdxl = True, use_refiner=False, controlnet_type="canny"):
         self.use_refiner = use_refiner
+        self.controlnet_type = controlnet_type
         self.controlnet = None
         self.pipe = None
         self.refiner = None
@@ -120,8 +122,9 @@ class DiffusionRunner:
         self.model_path = self.BASE_PATH_SDXL if use_sdxl else self.BASE_PATH_JUGGERNAUTXL
 
     def load_controlnet(self):
+        controlnet_path = self.CANNY_CONTROLNET_PATH if self.controlnet_type == "canny" else self.DEPTH_CONTROLNET_PATH
         self.controlnet = ControlNetModel.from_pretrained(
-            self.CANNY_CONTROLNET_PATH,
+            controlnet_path,
             torch_dtype=torch.float16,
             variant="fp16",
             use_safetensors=True,
@@ -224,8 +227,12 @@ class DiffusionRunner:
         #                                                             #   algorithm_type="sde-dpmsolver++",
         #                                                             use_karras_sigmas=True)
         
-        canny_image = ControlNetCannyProcessor.process(control_image_url)
-        ImageUtils.save_image_with_timestamp(canny_image, "canny")
+        if self.controlnet_type == "canny":
+            processed_image = ControlNetCannyProcessor.process(control_image_url)
+            ImageUtils.save_image_with_timestamp(processed_image, "canny")
+        else:
+            processed_image = load_image(control_image_url)
+            ImageUtils.save_image_with_timestamp(processed_image, "depth")
         
         # conditioning, pooled = self.compel(prompt)
 
@@ -244,7 +251,7 @@ class DiffusionRunner:
             "negative_prompt": negative_prompt,
             "negative_prompt_2": negative_prompt_2,
             "controlnet_conditioning_scale": controlnet_conditioning_scale,
-            "image": canny_image,
+            "image": processed_image,
             "num_inference_steps": num_inference_steps,
             "guidance_scale": guidance_scale,
             "num_images_per_prompt": 1,

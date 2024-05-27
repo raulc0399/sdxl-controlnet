@@ -63,10 +63,20 @@ if __name__ == "__main__":
     prompt_2 = ""
     negative_prompt_2 = ""
 
-    diffusion_runner = DiffusionRunner(use_sdxl=True)
-    run_diffusion_experiments(diffusion_runner, "sdxl", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type="canny")
+    run_diffusion_experiments(diffusion_runner, "sdxl-canny", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
 
     del diffusion_runner
 
-    diffusion_runner = DiffusionRunner(use_sdxl=False)
-    run_diffusion_experiments(diffusion_runner, "juggernaut", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+    diffusion_runner = DiffusionRunner(use_sdxl=True, controlnet_type="depth")  
+    run_diffusion_experiments(diffusion_runner, "sdxl-depth", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+
+    del diffusion_runner
+
+    diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="canny")
+    run_diffusion_experiments(diffusion_runner, "juggernaut-canny", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
+
+    del diffusion_runner
+    
+    diffusion_runner = DiffusionRunner(use_sdxl=False, controlnet_type="depth")
+    run_diffusion_experiments(diffusion_runner, "juggernaut-depth", CONTROL_IMAGE_URL, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals)
