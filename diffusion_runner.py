@@ -297,13 +297,11 @@ class DiffusionRunner:
 
         print("Parameters for diffuser:")
         print("prompt:", prompt)
-        print("prompt_2:", prompt_2)
         print("negative_prompt:", negative_prompt)
-        print("negative_prompt_2:", negative_prompt_2)
         print("controlnet_conditioning_scale:", controlnet_conditioning_scale)
         print("num_inference_steps:", num_inference_steps)
         print("guidance_scale:", guidance_scale)
-        # print("seeds:", seeds)
+        print("seeds:", seeds)
 
         if self.use_refiner:
             diffusion_args["output_type"] = "latent"
