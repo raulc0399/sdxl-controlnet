@@ -4,7 +4,7 @@ from image_utils import ImageUtils
 
 from prompts import prompts
 
-def run_diffusion_experiments(diffusion_runner, model, control_image_url, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals):
+def run_diffusion_experiments(diffusion_runner, models_used, control_image_url, controlnet_conditioning_scale_vals, num_inference_steps_vals, guidance_scale_vals):
 
     all_experiments_count = len(prompts) * len(controlnet_conditioning_scale_vals) * len(num_inference_steps_vals) * len(guidance_scale_vals)
     experiment_no = 1
@@ -16,7 +16,7 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
             for num_inference_steps in num_inference_steps_vals:
                 for guidance_scale in guidance_scale_vals:
                     print(f"Running experiment {experiment_no} from {all_experiments_count} experiments")
-                    print(f"Model: {model}, Controlnet Conditioning Scale: {controlnet_conditioning_scale}, Num Inference Steps: {num_inference_steps}, Guidance Scale: {guidance_scale}, Prompt: {prompt:.20}")
+                    print(f"Model: {models_used}, Controlnet Conditioning Scale: {controlnet_conditioning_scale}, Num Inference Steps: {num_inference_steps}, Guidance Scale: {guidance_scale}, Prompt: {prompt:.20}")
 
                     image, upscaled_image = diffusion_runner.run(
                         prompt,
@@ -28,7 +28,7 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                     )
                     
                     params = {
-                        "model": model,
+                        "model": models_used,
                         "controlnet_conditioning_scale": controlnet_conditioning_scale,
                         "num_inference_steps": num_inference_steps,
                         "guidance_scale": guidance_scale,
@@ -37,7 +37,7 @@ def run_diffusion_experiments(diffusion_runner, model, control_image_url, contro
                         "seed": seed
                     }
 
-                    ImageUtils.save_image_with_timestamp(image, params=params)
+                    ImageUtils.save_image_with_timestamp(image, models_used, params)
 
                     if upscaled_image is not None:
                         ImageUtils.save_image_with_timestamp(upscaled_image, "upscaled")
