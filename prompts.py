@@ -6,5 +6,9 @@ prompts = [
     # "RAW photo of house in german suburb, nice warm, day, sunny, white exterior",
     # "architectural rendering of houses of same design in modern city suburb, stairs between the levels, nice warm, day, sunny, white exterior",
     # "A 3d rendering of a modern house in the suburbs of a modern city. Stairs between the floors. The house is not on the main street, nice clean vegetation. sun's position in the morning, on a warm sunny day."
-    "sun, sunlight, sunny sky, real estate, photot, blue sky, best quality, high resolution, high quality, highres, analog photo, high detailed textures"   
+    # "sun, sunlight, sunny sky, real estate, photot, blue sky, best quality, high resolution, high quality, highres, analog photo, high detailed textures"
+    "nice houses on a sunny day, modern architecture, nice modern garden",
+    "nice houses on a sunny day, modern architecture, clean lawn",
+    "a beautiful modern houses, in a modern city, (sharp focus:1.2), extremely detailed, (photorealistic:1.4), (RAW image, 8k high resolution:1.2), RAW candid cinema, 16mm, color graded Portra 400 film, ultra realistic, cinematic film still, subsurface scattering, ray tracing, (volumetric lighting)",
+    "suburban house, dusk, modern architecture, two-story, landscaped, front lawn, exterior lighting, clear sky, twilight hues, residential area, paved road, high dynamic range, wide angle, curb appeal, stone accents, window reflections, tranquil scene"
 ]
