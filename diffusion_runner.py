@@ -11,6 +11,7 @@ from diffusers import (
 
 # from diffusers.models.attention_processor import AttnProcessor2_0
 from diffusers.utils import load_image
+from enum import Enum
 import numpy as np
 import torch
 import cv2
@@ -121,6 +122,10 @@ class ImageProcessor:
         
         return image
 
+class ControlNetType(Enum):
+    CANNY = "canny"
+    DEPTH = "depth"
+    MISTO = "misto"
 
 class DiffusionRunner:
     BASE_PATH_JUGGERNAUTXL = "/home/raul/codelab/models/juggernautXL_v8Rundiffusion.safetensors"
@@ -144,13 +149,17 @@ class DiffusionRunner:
         self.model_path = self.BASE_PATH_SDXL if use_sdxl else self.BASE_PATH_JUGGERNAUTXL
 
     def load_controlnet(self):
-        if self.controlnet_type == "misto":
+        if self.controlnet_type == ControlNetType.MISTO:
             controlnet_path = self.MISTOLINE_CONTROLNET_PATH
-        elif self.controlnet_type == "depth":
+        elif self.controlnet_type == ControlNetType.DEPTH:
             controlnet_path = self.DEPTH_CONTROLNET_PATH
-        else:
+        elif self.controlnet_type == ControlNetType.CANNY:
             controlnet_path = self.CANNY_CONTROLNET_PATH
+        else:
+            raise ValueError(f"Unknown controlnet type: {self.controlnet_type}")
         
+        print(f"Loading controlnet from: {controlnet_path}")
+
         self.controlnet = ControlNetModel.from_pretrained(
             controlnet_path,
             torch_dtype=torch.float16,
