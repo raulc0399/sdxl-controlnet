@@ -1,4 +1,4 @@
-# file adapted from a1111
+# adapted from a1111
 
 import sys
 import os

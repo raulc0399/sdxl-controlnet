@@ -1,19 +1,21 @@
+# adapted from a1111
+
+from collections import namedtuple
 from PIL import Image
 import numpy as np
 import math
-from dataclasses import dataclass
 
-class Grid:
-    tiles: list
-    tile_w: int
-    tile_h: int
-    image_w: int
-    image_h: int
-    overlap: int
+class Grid(namedtuple("_Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "overlap"])):
+    @property
+    def tile_count(self) -> int:
+        """
+        The total number of tiles in the grid.
+        """
+        return sum(len(row[2]) for row in self.tiles)
 
-def split_grid(image, tile_w=512, tile_h=512, overlap=64):
-    w = image.width
-    h = image.height
+
+def split_grid(image: Image.Image, tile_w: int = 512, tile_h: int = 512, overlap: int = 64) -> Grid:
+    w, h = image.size
 
     non_overlap_width = tile_w - overlap
     non_overlap_height = tile_h - overlap
