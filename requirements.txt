@@ -7,3 +7,5 @@ accelerate
 compel
 spandrel
 tqdm
+safetensors
+
