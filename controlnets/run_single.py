@@ -1,20 +1,20 @@
 import torch
 from diffusers.utils import load_image
 from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
-from diffusers import UniPCMultistepScheduler, DPMSolverMultistepScheduler
+from diffusers import UniPCMultistepScheduler, DPMSolverMultistepScheduler, DEISMultistepScheduler
 from datetime import datetime
 import itertools
 import json
 import os
 import sys
 
-INPUT_FOLDER = "../input_imgs"
-OUTPUT_FOLDER = "../gen_imgs"
+# relative to the starting script
+INPUT_FOLDER = "./input_imgs"
+OUTPUT_FOLDER = "./gen_imgs"
 
+# "xinsir/controlnet-union-sdxl-1.0", - to try, separate pipeline https://github.com/xinsir6/ControlNetPlus/blob/main/controlnet_union_test_segment.py
 MODELS = [
-    # "xinsir/controlnet-union-sdxl-1.0", - to try, separate pipeline https://github.com/xinsir6/ControlNetPlus/blob/main/controlnet_union_test_segment.py
     "diffusers/controlnet-canny-sdxl-1.0",
-    "diffusers/diffuserscontrolnet-canny-sdxl-1.0"
     "diffusers/controlnet-depth-sdxl-1.0",
     "TheMistoAI/MistoLine",
     "xinsir/controlnet-canny-sdxl-1.0",
@@ -46,16 +46,16 @@ PROMPT3=""""Architecture photography of a row of houses with a black staircase b
 def get_control_image(model_name):
     """Select appropriate control image based on model name"""
     control_images = {
-        'depth': ("control_image_depth.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_depth.png")),
-        'canny': ("control_image_edges.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_edges.png")),
-        'normals': ("control_image_normals.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_normals.png"))
+        'depth': ("control_image_depth.png", load_image(f"{INPUT_FOLDER}/control_image_depth.png")),
+        'canny': ("control_image_edges.png", load_image(f"{INPUT_FOLDER}/control_image_edges.png")),
+        'normals': ("control_image_normals.png", load_image(f"{INPUT_FOLDER}/control_image_normals.png"))
     }
     
     if 'depth' in model_name.lower():
         return control_images['depth']
     elif 'canny' in model_name.lower():
         return control_images['canny']
-    elif 'lineart' in model_name.lower():
+    elif 'lineart' in model_name.lower() or 'mistoline' in model_name.lower() or 'scribble' in model_name.lower():
         return control_images['canny']
     elif 'normals' in model_name.lower():
         return control_images['normals']
@@ -65,9 +65,12 @@ def get_control_image(model_name):
 
 def load_pipeline(controlnet_model):
     """Load the pipeline with specified controlnet model"""
+    variant_kwargs = {"variant": "fp16"} if "MistoLine" in controlnet_model else {}
+    
     controlnet = ControlNetModel.from_pretrained(
         controlnet_model, 
-        torch_dtype=torch.bfloat16
+        torch_dtype=torch.float16,
+        **variant_kwargs
     ).to("cuda")
     
     vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
@@ -88,11 +91,11 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
                    image_index, control_image_name, model_name, scheduler):
     """Generate image with specified parameters"""
     width, height = control_image.size
-    
+
     image = pipe(
         prompt_text,
         negative_prompt=NEGATIVE_PROMPT,
-        control_image=control_image,
+        image=control_image,
         width=width,
         height=height,
         controlnet_conditioning_scale=conditioning_scale,
@@ -126,7 +129,7 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
     print(f"Saved image: {image_path}")
 
 def ensure_params_dir(model):
-    params_dir = f"{OUTPUT_FOLDER}/imgs/{model}/params"
+    params_dir = f"{OUTPUT_FOLDER}/{model}/params"
     os.makedirs(params_dir, exist_ok=True)
 
 def main(model_index):
@@ -136,7 +139,8 @@ def main(model_index):
     prompts = [PROMPT3]
     conditioning_scales = [0.6, 0.7, 0.8, 0.9, 1.0]
     inference_steps = [20, 30, 40]
-    scheulders = ['default', 'dpmsolver', 'unipc']
+    # default should be first
+    schedulers = ['default', 'dpmsolver', 'unipc', 'deis']
     # conditioning_scales = [0.8]
     # inference_steps = [30]
 
@@ -145,7 +149,7 @@ def main(model_index):
         len(prompts) *
         len(conditioning_scales) *
         len(inference_steps) *
-        len(scheulders)
+        len(schedulers)
     )
     print(f"Total combinations to generate: {total_combinations}")
 
@@ -153,7 +157,8 @@ def main(model_index):
     param_combinations = itertools.product(
         prompts,
         conditioning_scales,
-        inference_steps
+        inference_steps,
+        schedulers
     )
     
     model = MODELS[model_index]
@@ -163,17 +168,19 @@ def main(model_index):
 
         pipe = load_pipeline(model)
         control_image_name, control_image = get_control_image(model)
-                    
+
+        orig_config = pipe.scheduler.config
         for prompt_text, cond_scale, steps, scheduler in param_combinations:
             try:
                 # the first value is actually the default scheduler - so we don't need to do anything
                 if scheduler == 'dpmsolver':
-                    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
+                    pipe.scheduler = DPMSolverMultistepScheduler.from_config(orig_config,
                                                                              use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
                 elif scheduler == 'unipc':
-                    # pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
-                    pipe.scheduler = UniPCMultistepScheduler()
-                
+                    pipe.scheduler = UniPCMultistepScheduler.from_config(orig_config)
+                elif scheduler == 'deis':
+                    pipe.scheduler = DEISMultistepScheduler.from_config(orig_config)
+
                 generate_image(
                     pipe,
                     control_image,
