@@ -8,6 +8,9 @@ import json
 import os
 import sys
 
+INPUT_FOLDER = "../input_imgs"
+OUTPUT_FOLDER = "../gen_imgs"
+
 MODELS = [
     # "xinsir/controlnet-union-sdxl-1.0", - to try, separate pipeline https://github.com/xinsir6/ControlNetPlus/blob/main/controlnet_union_test_segment.py
     "diffusers/controlnet-canny-sdxl-1.0",
@@ -41,9 +44,9 @@ Natural lens flare and soft evening lighting. Architectural visualization style 
 def get_control_image(model_name):
     """Select appropriate control image based on model name"""
     control_images = {
-        'depth': ("control_image_depth.png", load_image("../imgs/control_images/control_image_depth.png")),
-        'canny': ("control_image_edges.png", load_image("../imgs/control_images/control_image_edges.png")),
-        'normals': ("control_image_normals.png", load_image("../imgs/control_images/control_image_normals.png"))
+        'depth': ("control_image_depth.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_depth.png")),
+        'canny': ("control_image_edges.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_edges.png")),
+        'normals': ("control_image_normals.png", load_image(f"{INPUT_FOLDER}/imgs/control_images/control_image_normals.png"))
     }
     
     if 'depth' in model_name.lower():
@@ -100,7 +103,7 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
     base_name = f"{timestamp}_{image_index:04d}_c{conditioning_scale}_s{num_steps}"
 
     # Save image
-    image_path = f"../imgs/{model_name}/{base_name}.png"
+    image_path = f"{OUTPUT_FOLDER}/{model_name}/{base_name}.png"
     image.save(image_path)
     
     # Save parameters
@@ -113,14 +116,14 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
         "prompt": prompt_text
     }
     
-    params_path = f"../imgs/{model_name}/params/{base_name}.json"
+    params_path = f"{OUTPUT_FOLDER}/{model_name}/params/{base_name}.json"
     with open(params_path, 'w') as f:
         json.dump(params, f, indent=4, separators=(',\n', ': '))
     
     print(f"Saved image: {image_path}")
 
 def ensure_params_dir(model):
-    params_dir = f"../imgs/{model}/params"
+    params_dir = f"{OUTPUT_FOLDER}/imgs/{model}/params"
     os.makedirs(params_dir, exist_ok=True)
 
 def main(model_index):
