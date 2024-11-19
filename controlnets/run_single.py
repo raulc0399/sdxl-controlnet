@@ -73,11 +73,6 @@ def load_pipeline(controlnet_model):
         torch_dtype=torch.float16
     ).to("cuda")
     
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
-                                                             use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
-    
-    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
-    
     print(f"Loaded model: {controlnet_model}")
     print(f"Pipeline device map: {pipe.hf_device_map}")
     print(f"Controlnet device: {controlnet.device}")
@@ -135,6 +130,7 @@ def main(model_index):
     prompts = [PROMPT2]
     conditioning_scales = [0.6, 0.7, 0.8, 0.9, 1.0]
     inference_steps = [20, 30, 40]
+    scheulders = ['default', 'dpmsolver', 'unipc']
     # conditioning_scales = [0.8]
     # inference_steps = [30]
 
@@ -142,7 +138,8 @@ def main(model_index):
     total_combinations = (
         len(prompts) *
         len(conditioning_scales) *
-        len(inference_steps)
+        len(inference_steps) *
+        len(scheulders)
     )
     print(f"Total combinations to generate: {total_combinations}")
 
@@ -161,8 +158,16 @@ def main(model_index):
         pipe = load_pipeline(model)
         control_image_name, control_image = get_control_image(model)
                     
-        for prompt_text, cond_scale, steps in param_combinations:
+        for prompt_text, cond_scale, steps, scheduler in param_combinations:
             try:
+                # the first value is actually the default scheduler - so we don't need to do anything
+                if scheduler == 'dpmsolver':
+                    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
+                                                                             use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
+                elif scheduler == 'unipc':
+                    # pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+                    pipe.scheduler = UniPCMultistepScheduler()
+                
                 generate_image(
                     pipe,
                     control_image,
