@@ -1,6 +1,7 @@
 import torch
 from diffusers.utils import load_image
 from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
+from diffusers import UniPCMultistepScheduler, DPMSolverMultistepScheduler
 from datetime import datetime
 import itertools
 import json
@@ -9,13 +10,13 @@ import sys
 
 MODELS = [
     # "xinsir/controlnet-union-sdxl-1.0", - to try, separate pipeline https://github.com/xinsir6/ControlNetPlus/blob/main/controlnet_union_test_segment.py
-    "xinsir/controlnet-canny-sdxl-1.0",
-    "xinsir/controlnet-depth-sdxl-1.0",
-    "xinsir/controlnet-scribble-sdxl-1.0",
     "diffusers/controlnet-canny-sdxl-1.0",
     "diffusers/diffuserscontrolnet-canny-sdxl-1.0"
     "diffusers/controlnet-depth-sdxl-1.0",
-    "TheMistoAI/MistoLine"
+    "TheMistoAI/MistoLine",
+    "xinsir/controlnet-canny-sdxl-1.0",
+    "xinsir/controlnet-depth-sdxl-1.0",
+    "xinsir/controlnet-scribble-sdxl-1.0"
 ]
 
 BASE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
@@ -63,14 +64,19 @@ def load_pipeline(controlnet_model):
         controlnet_model, 
         torch_dtype=torch.bfloat16
     ).to("cuda")
-
+    
     vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
     pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
         BASE_MODEL,
         controlnet=controlnet,
         vae=vae,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.float16
     ).to("cuda")
+    
+    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config,
+                                                             use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
+    
+    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     
     print(f"Loaded model: {controlnet_model}")
     print(f"Pipeline device map: {pipe.hf_device_map}")
