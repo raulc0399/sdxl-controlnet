@@ -83,7 +83,7 @@ def load_pipeline(controlnet_model):
     return pipe
 
 def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_steps,
-                   image_index, control_image_name, model_name):
+                   image_index, control_image_name, model_name, scheduler):
     """Generate image with specified parameters"""
     width, height = control_image.size
     
@@ -100,7 +100,7 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-    base_name = f"{timestamp}_{image_index:04d}_c{conditioning_scale}_s{num_steps}"
+    base_name = f"{timestamp}_{image_index:04d}_c{conditioning_scale}_s{num_steps}_{scheduler}"
 
     # Save image
     image_path = f"{OUTPUT_FOLDER}/{model_name}/{base_name}.png"
@@ -113,6 +113,7 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
         "num_steps": num_steps,
         "image_path": image_path,
         "control_image": control_image_name,
+        "scheduler": scheduler,
         "prompt": prompt_text
     }
     
@@ -179,7 +180,8 @@ def main(model_index):
                     steps,
                     image_counter,
                     control_image_name,
-                    model_name
+                    model_name,
+                    scheduler
                 )
 
                 image_counter += 1
