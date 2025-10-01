@@ -27,25 +27,26 @@ NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
 
 PROMPT = """Make a modern professional photo real visualization or Photograph .Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany suburban style. interior lights on. long tree shadows from late warm sun. sub urban environment. foreground bokeh from bushes and leaf sun shimmer. clean blue sky, desaturated colors and professional grading and postproduction."""
     
-def get_control_image(model_name):
-    """Select appropriate control image based on model name"""
-    control_images = {
-        'depth': ("control_image_depth.png", load_image(f"{INPUT_FOLDER}/control_image_depth.png")),
-        'canny': ("control_image_edges.png", load_image(f"{INPUT_FOLDER}/control_image_edges.png")),
-        'normals': ("control_image_normals.png", load_image(f"{INPUT_FOLDER}/control_image_normals.png"))
-    }
+def get_control_images(model_name):
+    """Get both control images - original and preprocessed"""
+    # Original c_edges.png
+    c_edges_image = load_image(f"{INPUT_FOLDER}/c_edges.png")
     
-    if 'depth' in model_name.lower():
-        return control_images['depth']
-    elif 'canny' in model_name.lower():
-        return control_images['canny']
-    elif 'lineart' in model_name.lower() or 'mistoline' in model_name.lower() or 'scribble' in model_name.lower():
-        return control_images['canny']
-    elif 'normals' in model_name.lower():
-        return control_images['normals']
-    else:
-        print(f"Unknown control image for model: {model_name}")
-        return None, None
+    # Load cp2.png and apply preprocessing
+    cp2_image = load_image(f"{INPUT_FOLDER}/cp2.png")
+    
+    # Apply CannyDetector and AnylineDetector to cp2.png
+    canny_detector = CannyDetector()
+    anyline_detector = AnylineDetector.from_pretrained("TheMistoAI/MistoLine", subfolder="Anyline")
+    
+    cp2_canny = canny_detector(cp2_image)
+    cp2_anyline = anyline_detector(cp2_image)
+    
+    return [
+        ("c_edges.png", c_edges_image),
+        ("cp2_canny.png", cp2_canny),
+        ("cp2_anyline.png", cp2_anyline)
+    ]
 
 def load_pipeline(controlnet_model):
     """Load the pipeline with specified controlnet model"""
@@ -71,7 +72,7 @@ def load_pipeline(controlnet_model):
     
     return pipe
 
-def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_steps,
+def generate_image(pipe, control_image, prompt_text, guidance_scale, conditioning_scale, num_steps,
                    image_index, control_image_name, model_name, scheduler):
     """Generate image with specified parameters"""
     width, height = control_image.size
@@ -84,12 +85,15 @@ def generate_image(pipe, control_image, prompt_text, conditioning_scale, num_ste
         height=height,
         controlnet_conditioning_scale=conditioning_scale,
         num_inference_steps=num_steps,
+        guidance_scale=guidance_scale,
         generator=GENERATOR,
     ).images[0]
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-    base_name = f"{timestamp}_{image_index:04d}_c{conditioning_scale}_s{num_steps}_{scheduler}"
+    
+    # Include control image name in the filename
+    control_suffix = control_image_name.replace('.png', '').replace('_', '-')
+    base_name = f"{timestamp}_{image_index:04d}_{control_suffix}_g{guidance_scale}+c{conditioning_scale}_s{num_steps}_{scheduler}"
 
     # Save image
     image_path = f"{OUTPUT_FOLDER}/{model_name}/{base_name}.png"
@@ -119,27 +123,29 @@ def ensure_params_dir(model):
 def main(model_index):
     image_counter = 0
     
-    # Parameter combinations
+    # Parameter combinations - optimized for photorealistic results
     prompts = [PROMPT]
-    conditioning_scales = [0.6, 0.7, 0.8, 0.9, 1.0]
-    inference_steps = [20, 30, 40]
+    guidance_scales = [6.0, 7.0]  # CFG scale optimized for photorealism
+    conditioning_scales = [0.6, 0.75, 1.0]
+    inference_steps = [30, 40, 70, 120]
     # default should be first
-    schedulers = ['default', 'dpmsolver', 'unipc', 'deis']
-    # conditioning_scales = [0.8]
-    # inference_steps = [30]
+    schedulers = ['default', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final']
 
-    # Calculate total combinations
+    # Calculate total combinations (now includes 3 control images)
     total_combinations = (
         len(prompts) *
+        len(guidance_scales) *
         len(conditioning_scales) *
         len(inference_steps) *
-        len(schedulers)
+        len(schedulers) *
+        3  # 3 control images: c_edges, cp2_canny, cp2_anyline
     )
     print(f"Total combinations to generate: {total_combinations}")
 
     # Generate all parameter combinations using itertools
     param_combinations = itertools.product(
         prompts,
+        guidance_scales,
         conditioning_scales,
         inference_steps,
         schedulers
@@ -151,37 +157,56 @@ def main(model_index):
         ensure_params_dir(model_name)
 
         pipe = load_pipeline(model)
-        control_image_name, control_image = get_control_image(model)
+        control_images = get_control_images(model)
 
         orig_config = pipe.scheduler.config
-        for prompt_text, cond_scale, steps, scheduler in param_combinations:
-            try:
-                # the first value is actually the default scheduler - so we don't need to do anything
-                if scheduler == 'dpmsolver':
-                    pipe.scheduler = DPMSolverMultistepScheduler.from_config(orig_config,
-                                                                             use_karras_sigmas=True, algorithm_type="sde-dpmsolver++")
-                elif scheduler == 'unipc':
-                    pipe.scheduler = UniPCMultistepScheduler.from_config(orig_config)
-                elif scheduler == 'deis':
-                    pipe.scheduler = DEISMultistepScheduler.from_config(orig_config)
+        for prompt_text, guidance_scale, cond_scale, steps, scheduler in param_combinations:
+            # Run for each control image
+            for control_image_name, control_image in control_images:
+                try:
+                    # DPM++ 2M SDE Karras for photorealistic results
+                    if scheduler == 'dmp2m_sde_karras':
+                        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                            orig_config,
+                            use_karras_sigmas=True, 
+                            algorithm_type="sde-dpmsolver++",
+                            solver_order=2
+                        )
+                    elif scheduler == 'dpm2m_sde_karras_with_lambdas':
+                        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                            orig_config,
+                            use_karras_sigmas=True, 
+                            algorithm_type="sde-dpmsolver++",
+                            solver_order=2,
+                            lu_lambdas=True
+                        )
+                    elif scheduler == 'dpm2m_sde_karras_with_euler_at_final':
+                        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                            orig_config,
+                            use_karras_sigmas=True, 
+                            algorithm_type="sde-dpmsolver++",
+                            solver_order=2,
+                            euler_at_final=True
+                        )
 
-                generate_image(
-                    pipe,
-                    control_image,
-                    prompt_text,
-                    cond_scale,
-                    steps,
-                    image_counter,
-                    control_image_name,
-                    model_name,
-                    scheduler
-                )
+                    generate_image(
+                        pipe,
+                        control_image,
+                        prompt_text,
+                        guidance_scale,
+                        cond_scale,
+                        steps,
+                        image_counter,
+                        control_image_name,
+                        model_name,
+                        scheduler
+                    )
 
-                image_counter += 1
+                    image_counter += 1
 
-            except Exception as e:
-                print(f"Error generating image for {model} with params: {cond_scale}, {steps}")
-                print(f"Error: {str(e)}")
+                except Exception as e:
+                    print(f"Error generating image for {model} with control image {control_image_name} and params: {cond_scale}, {steps}")
+                    print(f"Error: {str(e)}")
 
         # clear gpu
         del pipe
