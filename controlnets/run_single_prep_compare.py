@@ -42,6 +42,10 @@ def get_control_images(model_name):
     cp2_canny = canny_detector(cp2_image)
     cp2_anyline = anyline_detector(cp2_image)
     
+    # Save the processed images to disk
+    cp2_canny.save(f"{OUTPUT_FOLDER}/cp2_canny.png")
+    cp2_anyline.save(f"{OUTPUT_FOLDER}/cp2_anyline.png")
+    
     return [
         ("c_edges.png", c_edges_image),
         ("cp2_canny.png", cp2_canny),
@@ -129,7 +133,7 @@ def main(model_index):
     conditioning_scales = [0.6, 0.75, 1.0]
     inference_steps = [30, 40, 70, 120]
     # default should be first
-    schedulers = ['default', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final']
+    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final, 'dpm_flow'']
 
     # Calculate total combinations (now includes 3 control images)
     total_combinations = (
@@ -164,8 +168,14 @@ def main(model_index):
             # Run for each control image
             for control_image_name, control_image in control_images:
                 try:
-                    # DPM++ 2M SDE Karras for photorealistic results
-                    if scheduler == 'dmp2m_sde_karras':
+                    if scheduler == 'dpm3m_sde_karras':
+                        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                            orig_config,
+                            use_karras_sigmas=True, 
+                            algorithm_type="sde-dpmsolver++",
+                            solver_order=3
+                        )                    
+                    elif scheduler == 'dmp2m_sde_karras':
                         pipe.scheduler = DPMSolverMultistepScheduler.from_config(
                             orig_config,
                             use_karras_sigmas=True, 
@@ -178,7 +188,7 @@ def main(model_index):
                             use_karras_sigmas=True, 
                             algorithm_type="sde-dpmsolver++",
                             solver_order=2,
-                            lu_lambdas=True
+                            use_lu_lambdas=True
                         )
                     elif scheduler == 'dpm2m_sde_karras_with_euler_at_final':
                         pipe.scheduler = DPMSolverMultistepScheduler.from_config(
@@ -187,6 +197,12 @@ def main(model_index):
                             algorithm_type="sde-dpmsolver++",
                             solver_order=2,
                             euler_at_final=True
+                        )
+                    elif scheduler == 'dpm_flow':
+                        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                            orig_config,
+                            use_flow_sigmas=True, 
+                            solver_order=2
                         )
 
                     generate_image(
