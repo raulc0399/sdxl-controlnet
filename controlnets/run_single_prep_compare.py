@@ -9,6 +9,8 @@ import os
 import sys
 from controlnet_aux import CannyDetector, AnylineDetector
 
+ACCESS_TOKEN = os.getenv("HF_TOKEN")
+
 # relative to the starting script
 INPUT_FOLDER = "./input_imgs"
 OUTPUT_FOLDER = "./gen_imgs"
@@ -27,7 +29,9 @@ NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
 
 PROMPT = """Make a modern professional photo real visualization or Photograph .Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany suburban style. interior lights on. long tree shadows from late warm sun. sub urban environment. foreground bokeh from bushes and leaf sun shimmer. clean blue sky, desaturated colors and professional grading and postproduction."""
     
-def get_control_images(model_name):
+def get_control_images():
+    print("\033[96mPreparing control images\033[0m")
+    
     """Get both control images - original and preprocessed"""
     # Original c_edges.png
     c_edges_image = load_image(f"{INPUT_FOLDER}/c_edges.png")
@@ -45,6 +49,14 @@ def get_control_images(model_name):
     # Save the processed images to disk
     cp2_canny.save(f"{OUTPUT_FOLDER}/cp2_canny.png")
     cp2_anyline.save(f"{OUTPUT_FOLDER}/cp2_anyline.png")
+
+    print("\033[96mControl images prepared and saved.\033[0m")
+
+    del canny_detector
+    del anyline_detector
+    torch.cuda.empty_cache()
+    
+    print("GPU cleared.")
     
     return [
         ("c_edges.png", c_edges_image),
@@ -67,7 +79,8 @@ def load_pipeline(controlnet_model):
         BASE_MODEL,
         controlnet=controlnet,
         vae=vae,
-        torch_dtype=torch.float16
+        torch_dtype=torch.float16,
+        token=ACCESS_TOKEN,
     ).to("cuda")
     
     print(f"\nLoaded model: {controlnet_model}")
@@ -160,8 +173,9 @@ def main(model_index):
         model_name = model.replace("/", "-")
         ensure_params_dir(model_name)
 
-        pipe = load_pipeline(model)
         control_images = get_control_images(model)
+
+        pipe = load_pipeline(model)
 
         orig_config = pipe.scheduler.config
         for prompt_text, guidance_scale, cond_scale, steps, scheduler in param_combinations:
