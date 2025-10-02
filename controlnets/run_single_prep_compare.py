@@ -41,7 +41,7 @@ def get_control_images():
     
     # Apply CannyDetector and AnylineDetector to cp2.png
     canny_detector = CannyDetector()
-    anyline_detector = AnylineDetector.from_pretrained("TheMistoAI/MistoLine", subfolder="Anyline")
+    anyline_detector = AnylineDetector.from_pretrained("TheMistoAI/MistoLine", filename="MTEED.pth", subfolder="Anyline")
     
     cp2_canny = canny_detector(cp2_image)
     cp2_anyline = anyline_detector(cp2_image)
@@ -144,7 +144,7 @@ def main(model_index):
     prompts = [PROMPT]
     guidance_scales = [6.0, 7.0]  # CFG scale optimized for photorealism
     conditioning_scales = [0.6, 0.75, 1.0]
-    inference_steps = [30, 40, 70, 120]
+    inference_steps = [30, 70, 120]
     # default should be first
     schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final', 'dpm_flow']
 
@@ -173,7 +173,7 @@ def main(model_index):
         model_name = model.replace("/", "-")
         ensure_params_dir(model_name)
 
-        control_images = get_control_images(model)
+        control_images = get_control_images()
 
         pipe = load_pipeline(model)
 
@@ -243,7 +243,7 @@ def main(model_index):
         torch.cuda.empty_cache()
                 
     except Exception as e:
-        print(f"Error loading model {model}")
+        print(f"Error while processing {model}")
         print(f"Error: {str(e)}")
 
 def check_model_index(index) -> bool:
