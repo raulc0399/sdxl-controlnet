@@ -70,7 +70,7 @@ def load_pipeline(controlnet_model):
         torch_dtype=torch.float16
     ).to("cuda")
     
-    print(f"Loaded model: {controlnet_model}")
+    print(f"\nLoaded model: {controlnet_model}")
     print(f"Pipeline device map: {pipe.hf_device_map}")
     print(f"Controlnet device: {controlnet.device}")
     
@@ -133,7 +133,7 @@ def main(model_index):
     conditioning_scales = [0.6, 0.75, 1.0]
     inference_steps = [30, 40, 70, 120]
     # default should be first
-    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final, 'dpm_flow'']
+    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final', 'dpm_flow']
 
     # Calculate total combinations (now includes 3 control images)
     total_combinations = (
