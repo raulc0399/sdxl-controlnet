@@ -27,8 +27,8 @@ GENERATOR = torch.Generator(device="cuda").manual_seed(87544357)
 
 NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
 
-PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany urban style. interior lights on. long tree shadows from late warm sun. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
-PROMPT1 = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
+# PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany urban style. interior lights on. long tree shadows from late warm sun. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
+PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
     
 def get_control_images():
     print("\033[96mPreparing control images\033[0m")
@@ -37,17 +37,24 @@ def get_control_images():
     # Original c_edges.png
     c_edges_image = load_image(f"{INPUT_FOLDER}/c_edges.png")
     
-    # Load cp2.png and apply preprocessing
+    # Load cp?.png and apply preprocessing
+    cp1_image = load_image(f"{INPUT_FOLDER}/cp1.png")
     cp2_image = load_image(f"{INPUT_FOLDER}/cp2.png")
     
     # Apply CannyDetector and AnylineDetector to cp2.png
     canny_detector = CannyDetector()
     anyline_detector = AnylineDetector.from_pretrained("TheMistoAI/MistoLine", filename="MTEED.pth", subfolder="Anyline")
-    
+
+    cp1_canny = canny_detector(cp1_image)
+    cp1_anyline = anyline_detector(cp1_image)
+
     cp2_canny = canny_detector(cp2_image)
     cp2_anyline = anyline_detector(cp2_image)
     
     # Save the processed images to disk
+    cp1_canny.save(f"{OUTPUT_FOLDER}/cp1_canny.png")
+    cp1_anyline.save(f"{OUTPUT_FOLDER}/cp1_anyline.png")
+    
     cp2_canny.save(f"{OUTPUT_FOLDER}/cp2_canny.png")
     cp2_anyline.save(f"{OUTPUT_FOLDER}/cp2_anyline.png")
 
@@ -61,6 +68,8 @@ def get_control_images():
     
     return [
         ("c_edges.png", c_edges_image),
+        ("cp1_canny.png", cp1_canny),
+        ("cp1_anyline.png", cp1_anyline),
         ("cp2_canny.png", cp2_canny),
         ("cp2_anyline.png", cp2_anyline)
     ]
@@ -143,11 +152,14 @@ def main(model_index):
     
     # Parameter combinations - optimized for photorealistic results
     prompts = [PROMPT]
-    guidance_scales = [6.0, 7.0]  # CFG scale optimized for photorealism
-    conditioning_scales = [0.6, 0.75, 1.0]
+    # guidance_scales = [6.0, 7.0]
+    # conditioning_scales = [0.6, 0.75, 1.0]
+    # inference_steps = [30, 70, 120]
+    guidance_scales = [7.0]
+    conditioning_scales = [0.75, 1.0]
     inference_steps = [30, 70, 120]
     # default should be first
-    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_euler_at_final'] # , 'dpm2m_sde_karras_with_lambdas', 'dpm_flow']
+    schedulers = ['default', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_euler_at_final'] # , 'dpm2m_sde_karras_with_lambdas', 'dpm_flow', 'dpm3m_sde_karras']
 
     # Calculate total combinations (now includes 3 control images)
     total_combinations = (
@@ -156,7 +168,7 @@ def main(model_index):
         len(conditioning_scales) *
         len(inference_steps) *
         len(schedulers) *
-        3  # 3 control images: c_edges, cp2_canny, cp2_anyline
+        5  # 5 control images: c_edges, cp1_canny, cp1_anyline, cp2_canny, cp2_anyline
     )
     print(f"Total combinations to generate: {total_combinations}")
 
