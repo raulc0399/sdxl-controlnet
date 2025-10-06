@@ -120,13 +120,13 @@ def generate_image(pipe, control_image, prompt_text, guidance_scale, conditionin
     """Generate image with specified parameters"""
     width, height = control_image.size
     
-    conditioning, pooled, negative_conditioning, negative_pooled = prepare_prompt(pipe, prompt_text, NEGATIVE_PROMPT)
+    # conditioning, pooled, negative_conditioning, negative_pooled = prepare_prompt(pipe, prompt_text, NEGATIVE_PROMPT)
 
     image = pipe(
-        # prompt_text,
-        # negative_prompt=NEGATIVE_PROMPT,
-        prompt_embeds=conditioning, pooled_prompt_embeds=pooled,
-        negative_prompt_embeds=negative_conditioning, negative_pooled_prompt_embeds=negative_pooled,
+        prompt_text,
+        negative_prompt=NEGATIVE_PROMPT,
+        # prompt_embeds=conditioning, pooled_prompt_embeds=pooled,
+        # negative_prompt_embeds=negative_conditioning, negative_pooled_prompt_embeds=negative_pooled,
         image=control_image,
         width=width,
         height=height,
