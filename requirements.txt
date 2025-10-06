@@ -11,3 +11,4 @@ tqdm
 safetensors
 controlnet-aux
 compel
+git+https://github.com/xhinker/sd_embed.git@main
