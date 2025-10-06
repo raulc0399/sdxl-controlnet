@@ -27,7 +27,8 @@ GENERATOR = torch.Generator(device="cuda").manual_seed(87544357)
 
 NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
 
-PROMPT = """Make a modern professional photo real visualization or Photograph .Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany suburban style. interior lights on. long tree shadows from late warm sun. sub urban environment. foreground bokeh from bushes and leaf sun shimmer. clean blue sky, desaturated colors and professional grading and postproduction."""
+PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany urban style. interior lights on. long tree shadows from late warm sun. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
+PROMPT1 = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
     
 def get_control_images():
     print("\033[96mPreparing control images\033[0m")
@@ -146,7 +147,7 @@ def main(model_index):
     conditioning_scales = [0.6, 0.75, 1.0]
     inference_steps = [30, 70, 120]
     # default should be first
-    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_lambdas', 'dpm2m_sde_karras_with_euler_at_final', 'dpm_flow']
+    schedulers = ['default', 'dpm3m_sde_karras', 'dpm2m_sde_karras', 'dpm2m_sde_karras_with_euler_at_final'] # , 'dpm2m_sde_karras_with_lambdas', 'dpm_flow']
 
     # Calculate total combinations (now includes 3 control images)
     total_combinations = (
