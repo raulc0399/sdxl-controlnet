@@ -10,3 +10,4 @@ spandrel
 tqdm
 safetensors
 controlnet-aux
+compel

@@ -8,6 +8,7 @@ import json
 import os
 import sys
 from controlnet_aux import CannyDetector, AnylineDetector
+from compel import Compel, ReturnedEmbeddingsType
 
 ACCESS_TOKEN = os.getenv("HF_TOKEN")
 
@@ -25,11 +26,26 @@ MODELS = [
 BASE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
 GENERATOR = torch.Generator(device="cuda").manual_seed(87544357)
 
-NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
+# NEGATIVE_PROMPT = 'low quality, bad quality, sketches'
+NEGATIVE_PROMPT = 'worst quality, low quality, lowres, blurry, artifacts, noise, distorted, unrealistic, deformed, cartoon, sketch, painting, illustration, anime, video game, watermark, cut off, cropped, frame, border, oversaturated, overexposed, underexposed, bad lighting, fisheye, tilt, weird angle, incorrect perspective, wrong proportions, warped geometry, melted details, broken edges, glitch, low contrast, flat shading, plastic texture, fake reflections, mirror artifacts, unrealistic shadows, bad materials, poor composition, empty background, messy background, clutter'
+
 
 # PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany urban style. interior lights on. long tree shadows from late warm sun. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
 PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
-    
+
+def prepare_prompt(pipeline, prompt: str, negative_prompt) -> tuple:
+        compel = Compel(
+            tokenizer=[pipeline.tokenizer, pipeline.tokenizer_2],
+            text_encoder=[pipeline.text_encoder, pipeline.text_encoder_2],
+            returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+            requires_pooled=[False, True],
+        )
+        
+        conditioning, pooled = compel(prompt)
+        negative_conditioning, negative_pooled = compel(negative_prompt)
+        
+        return conditioning, pooled, negative_conditioning, negative_pooled
+
 def get_control_images():
     print("\033[96mPreparing control images\033[0m")
     
@@ -103,10 +119,14 @@ def generate_image(pipe, control_image, prompt_text, guidance_scale, conditionin
                    image_index, control_image_name, model_name, scheduler):
     """Generate image with specified parameters"""
     width, height = control_image.size
+    
+    conditioning, pooled, negative_conditioning, negative_pooled = prepare_prompt(pipe, prompt_text, NEGATIVE_PROMPT)
 
     image = pipe(
-        prompt_text,
-        negative_prompt=NEGATIVE_PROMPT,
+        # prompt_text,
+        # negative_prompt=NEGATIVE_PROMPT,
+        prompt_embeds=conditioning, pooled_prompt_embeds=pooled,
+        negative_prompt_embeds=negative_conditioning, negative_pooled_prompt_embeds=negative_pooled,
         image=control_image,
         width=width,
         height=height,
