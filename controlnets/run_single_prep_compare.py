@@ -31,7 +31,9 @@ NEGATIVE_PROMPT = 'worst quality, low quality, lowres, blurry, artifacts, noise,
 
 
 # PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should late decent afternoon summer sun from side. The Environment style in south germany urban style. interior lights on. long tree shadows from late warm sun. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
-PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
+# PROMPT = """Make a modern professional photo real visualization or Photograph from this clay 3d white model. Keep the Details and proportions from the model and elevations! the style of the architecture should be modern western and new build conditions. The roof with dark glazed roof tiles. the style of the image should midday, summer sun. The Environment style in south Germany urban style. sub urban environment. clean blue sky, desaturated colors and professional grading and postproduction."""
+PROMPT = """Photorealistic render of this white clay 3D model, preserving proportions and elevations. Modern Western new-build architecture with dark glazed roof tiles. Midday summer lighting, suburban South Germany setting, clean blue sky, desaturated tones, professional postproduction."""
+
 
 def prepare_prompt(pipeline, prompt: str, negative_prompt) -> tuple:
         compel = Compel(
