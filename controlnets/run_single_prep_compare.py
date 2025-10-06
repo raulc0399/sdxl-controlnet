@@ -48,7 +48,7 @@ def prepare_prompt(pipeline, prompt: str, negative_prompt) -> tuple:
         # negative_conditioning, negative_pooled = compel(negative_prompt)
 
         prompt_embeds, prompt_neg_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds = get_weighted_text_embeddings_sdxl(
-            prompt, negative_prompt=negative_prompt, pipe=pipeline
+            pipeline, prompt=prompt, neg_prompt=negative_prompt,
         )
 
         return prompt_embeds, pooled_prompt_embeds, prompt_neg_embeds, negative_pooled_prompt_embeds
