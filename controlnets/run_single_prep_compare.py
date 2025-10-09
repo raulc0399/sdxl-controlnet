@@ -18,6 +18,7 @@ INPUT_FOLDER = "./input_imgs"
 OUTPUT_FOLDER = "./gen_imgs"
 
 # xinsir/controlnet-union-sdxl-1.0
+# https://huggingface.co/xinsir/controlnet-union-sdxl-1.0/discussions/47
 MODELS = [
     "diffusers/controlnet-canny-sdxl-1.0",
     "TheMistoAI/MistoLine",
